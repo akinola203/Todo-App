@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Tasks - TaskFlow
+{% endblock %}
+
+{% block page_title %}
+All Tasks
+{% endblock %}
+
+{% block content %}
+<div class="task-list-page">
+    <!-- Filters -->
+    <div class="filters-bar glass-card">
+        <form method="get" class="filters-form">
+            <div class="filter-group">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search tasks..." class="form-input search-input">
+            </div>
+            <div class="filter-group">
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    {% for value, label in status_choices %}
+<option value="{{ value }}"
+{% if status_filter == value %}
+selected
+{% endif %}
+>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <select name="priority" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Priorities</option>
+                    {% for value, label in priority_choices %}
+<option value="{{ value }}"
+{% if priority_filter == value %}
+selected
+{% endif %}
+>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <select name="category" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+<option value="{{ cat.id }}"
+{% if category_filter == cat.id|stringformat:"s" %}
+selected
+{% endif %}
+>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <a href="{% url 'task_list' %}" class="btn btn-ghost">
+                <i class="fas fa-undo"></i> Reset
+            </a>
+        </form>
+    </div>
+
+    <!-- Task Grid -->
+    <div class="task-grid">
+        {% for task in tasks %}
+<div class="task-card
+{% if task.is_overdue %}
+overdue
+{% endif %}
+{% if task.is_pinned %}
+pinned
+{% endif %}
+">
+            <div class="task-card-header">
+                <div class="task-priority-badge {{ task.priority }}">
+                    <i class="fas fa-circle"></i> {{ task.priority|title }}
+                </div>
+                {% if task.is_pinned %}
+                <span class="pin-badge"><i class="fas fa-thumbtack"></i></span>
+                {% endif %}
+                <div class="task-actions-dropdown">
+                    <button class="btn-icon" onclick="toggleDropdown(this)">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="{% url 'task_update' task.id %}"><i class="fas fa-edit"></i> Edit</a>
+                        <a href="{% url 'task_archive' task.id %}"><i class="fas fa-archive"></i> Archive</a>
+                        <a href="{% url 'task_delete' task.id %}" class="danger"><i class="fas fa-trash"></i> Delete</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="task-card-body">
+                <h4 class="task-title">{{ task.title }}</h4>
+                {% if task.description %}
+                <p class="task-desc">{{ task.description|truncatechars:100 }}</p>
+                {% endif %}
+
+                {% if task.category %}
+                <span class="task-category" style="color: {{ task.category.color }}">
+                    <i class="fas {{ task.category.icon }}"></i> {{ task.category.name }}
+                </span>
+                {% endif %}
+
+                {% if task.tags %}
+                <div class="task-tags">
+                    {% for tag in task.tags %}
+                    <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="task-card-footer">
+                <div class="task-meta-row">
+                    {% if task.due_date %}
+<span class="task-due
+{% if task.is_overdue %}
+overdue-text
+{% elif task.is_due_soon %}
+soon-text
+{% endif %}
+">
+                        <i class="far fa-clock"></i> 
+{% if task.is_overdue %}
+Overdue:
+{% endif %}
+                        {{ task.due_date|date:"M d, Y H:i" }}
+                    </span>
+                    {% endif %}
+
+                    {% if task.subtasks.exists %}
+                    <span class="subtask-count">
+                        <i class="fas fa-list-check"></i> 
+                        {{ task.subtasks.filter.is_completed.count }}/{{ task.subtasks.count }}
+                    </span>
+                    {% endif %}
+                </div>
+
+<button class="task-toggle-btn
+{% if task.status == 'completed' %}
+completed
+{% endif %}
+"
+                        data-task-id="{{ task.id }}"
+                        onclick="toggleTaskStatus(this)">
+<i class="fas
+{% if task.status == 'completed' %}
+fa-check-circle
+{% else %}
+fa-circle
+{% endif %}
+"></i>
+<span>
+{% if task.status == 'completed' %}
+Completed
+{% else %}
+Mark Done
+{% endif %}
+</span>
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state full-width">
+            <div class="empty-icon"><i class="fas fa-clipboard-list"></i></div>
+            <h3>No tasks found</h3>
+            <p>Create your first task to get started.</p>
+            <a href="{% url 'task_create' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus"></i> Create Task
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

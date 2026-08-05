@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Categories - TaskFlow
+{% endblock %}
+
+{% block page_title %}
+Categories
+{% endblock %}
+
+{% block content %}
+<div class="category-page">
+    <div class="page-header-actions">
+        <a href="{% url 'category_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Category
+        </a>
+    </div>
+
+    <div class="category-grid">
+        {% for cat in categories %}
+        <div class="category-card glass-card">
+            <div class="category-icon" style="background: {{ cat.color }}20; color: {{ cat.color }}">
+                <i class="fas {{ cat.icon }}"></i>
+            </div>
+            <div class="category-info">
+                <h4>{{ cat.name }}</h4>
+                <span class="task-count">{{ cat.task_count }} tasks</span>
+            </div>
+            <a href="{% url 'category_delete' cat.id %}" class="btn-icon danger" title="Delete">
+                <i class="fas fa-trash"></i>
+            </a>
+        </div>
+        {% empty %}
+        <div class="empty-state full-width">
+            <i class="fas fa-tags"></i>
+            <h3>No categories yet</h3>
+            <p>Create categories to organize your tasks better.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

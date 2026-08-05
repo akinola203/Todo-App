@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Delete Category - TaskFlow
+{% endblock %}
+
+{% block page_title %}
+Delete Category
+{% endblock %}
+
+{% block content %}
+<div class="confirm-page">
+    <div class="glass-card confirm-card">
+        <div class="confirm-icon danger"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2>Delete Category?</h2>
+        <p>Delete <strong>"{{ category.name }}"</strong>?</p>
+        <p class="text-muted">Tasks in this category will become uncategorized.</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="confirm-actions">
+                <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</button>
+                <a href="{% url 'category_list' %}" class="btn btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

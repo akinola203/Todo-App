@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Archived - TaskFlow
+{% endblock %}
+
+{% block page_title %}
+Archived Tasks
+{% endblock %}
+
+{% block content %}
+<div class="archived-page">
+    <div class="task-list-compact">
+        {% for task in tasks %}
+        <div class="task-item-compact archived-item">
+            <div class="task-content">
+                <span class="task-title">{{ task.title }}</span>
+                <span class="task-meta">
+                    <span class="badge-priority {{ task.priority }}">{{ task.priority }}</span>
+                    <span class="task-due">Archived {{ task.updated_at|timesince }} ago</span>
+                </span>
+            </div>
+            <div class="task-actions">
+                <a href="{% url 'task_update' task.id %}" class="btn-icon"><i class="fas fa-edit"></i></a>
+                <a href="{% url 'task_delete' task.id %}" class="btn-icon danger"><i class="fas fa-trash"></i></a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-archive"></i>
+            <p>No archived tasks.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

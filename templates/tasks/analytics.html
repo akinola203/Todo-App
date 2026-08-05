@@ -1,0 +1,92 @@
+{% extends 'base.html' %} {% block title %} Analytics - TaskFlow {% endblock %}
+{% block page_title %} Analytics {% endblock %} {% block content %}
+<div class="analytics-page">
+  <div class="stats-grid">
+    <div class="stat-card glow-purple">
+      <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+      <div class="stat-info">
+        <h3>{{ total_tasks }}</h3>
+        <p>Total Tasks</p>
+      </div>
+    </div>
+    <div class="stat-card glow-green">
+      <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-info">
+        <h3>{{ completed_tasks }}</h3>
+        <p>Completed</p>
+      </div>
+    </div>
+    <div class="stat-card glow-blue">
+      <div class="stat-icon"><i class="fas fa-clock"></i></div>
+      <div class="stat-info">
+        <h3>{{ pending_tasks }}</h3>
+        <p>Pending</p>
+      </div>
+    </div>
+    <div class="stat-card glow-yellow">
+      <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+      <div class="stat-info">
+        <h3>{{ monthly_completed }}</h3>
+        <p>This Month</p>
+      </div>
+    </div>
+  </div>
+  <div class="dashboard-grid">
+    <div class="glass-card chart-card">
+      <h3><i class="fas fa-chart-line"></i> Weekly Activity</h3>
+      <div class="bar-chart">
+        {% for day in week_data %}
+        <div class="bar-group">
+          <div class="bar-stack">
+            <div
+              class="bar created"
+              style="height: {{ day.created|default:0 }}em; max-height: 120px;"
+            ></div>
+            <div
+              class="bar completed"
+              style="height: {{ day.completed|default:0 }}em; max-height: 120px;"
+            ></div>
+          </div>
+          <span class="bar-label">{{ day.date }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="chart-legend">
+        <span><span class="legend-dot created"></span> Created</span>
+        <span><span class="legend-dot completed"></span> Completed</span>
+      </div>
+    </div>
+    <div class="glass-card chart-card">
+      <h3><i class="fas fa-chart-pie"></i> Priority Breakdown</h3>
+      <div class="priority-bars">
+        {% for p in priority_data %}
+        <div class="priority-row">
+          <span class="priority-label">{{ p.priority|title }}</span>
+          <div class="priority-track">
+            <div
+              class="priority-fill {{ p.priority }}"
+              style="width: {{ p.count }}%"
+            ></div>
+          </div>
+          <span class="priority-count">{{ p.count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="glass-card chart-card full-width" style="margin-top: 20px">
+    <h3><i class="fas fa-tags"></i> Tasks by Category</h3>
+    <div class="category-chips">
+      {% for cat in category_data %}
+      <div
+        class="category-chip"
+        style="border-color: {{ cat.color }}; color: {{ cat.color }}"
+      >
+        <span class="chip-name">{{ cat.name }}</span>
+        <span class="chip-count">{{ cat.count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

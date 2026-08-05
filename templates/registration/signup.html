@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - TaskFlow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card glass-card">
+            <div class="auth-header">
+                <div class="logo">
+                    <i class="fas fa-layer-group"></i>
+                    <span>TaskFlow</span>
+                </div>
+                <h2>Create Account</h2>
+                <p>Start organizing your life</p>
+            </div>
+
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+
+                {% for field in form %}
+                <div class="form-group">
+                    <label>{{ field.label }}</label>
+                    <div class="input-with-icon">
+                        {% if 'password' in field.name %}
+                        <i class="fas fa-lock"></i>
+                        {% elif 'email' in field.name %}
+                        <i class="fas fa-envelope"></i>
+                        {% else %}
+                        <i class="fas fa-user"></i>
+                        {% endif %}
+                        {{ field }}
+                    </div>
+                    {% if field.errors %}
+                    <span class="field-error">{{ field.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Already have an account? <a href="{% url 'login' %}">Sign In</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

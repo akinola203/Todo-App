@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Delete Task - TaskFlow
+{% endblock %}
+
+{% block page_title %}
+Delete Task
+{% endblock %}
+
+{% block content %}
+<div class="confirm-page">
+    <div class="glass-card confirm-card">
+        <div class="confirm-icon danger"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2>Delete Task?</h2>
+        <p>Are you sure you want to delete <strong>"{{ task.title }}"</strong>?</p>
+        <p class="text-muted">This action cannot be undone.</p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="confirm-actions">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Yes, Delete
+                </button>
+                <a href="{% url 'task_list' %}" class="btn btn-ghost">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
