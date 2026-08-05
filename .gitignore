@@ -1,0 +1,12 @@
+__pycache__/ 
+*.pyc 
+*.pyo 
+venv/ 
+build/ 
+dist/ 
+*.spec 
+staticfiles/ 
+db.sqlite3 
+.env 
+fix_*.py 
+run_app.py 
