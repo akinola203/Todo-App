@@ -11,6 +11,7 @@ import json
 
 from .models import Task, SubTask, Category, Reminder, DailyAnalytics
 from .forms import TaskForm, SubTaskForm, CategoryForm, ReminderForm, SignUpForm
+from .ai_utils import parse_natural_language_task, generate_subtasks
 
 
 def signup(request):
@@ -145,6 +146,68 @@ def task_list(request):
 
 @login_required
 def task_create(request):
+    if request.method == 'POST':
+        # Check for natural language input
+        nl_input = request.POST.get('natural_language', '').strip()
+        if nl_input:
+            parsed = parse_natural_language_task(nl_input)
+            
+            # Convert due_date string to datetime object for the form
+            due_date = None
+            if parsed.get('due_date'):
+                try:
+                    from django.utils.dateparse import parse_datetime
+                    due_date = parse_datetime(parsed['due_date'])
+                except:
+                    pass
+            
+            initial = {
+                'title': parsed.get('title', nl_input),
+                'priority': parsed.get('priority', 'medium'),
+            }
+            if due_date:
+                # Format for datetime-local input
+                initial['due_date'] = due_date.strftime('%Y-%m-%dT%H:%M')
+            
+            form = TaskForm(initial=initial, user=request.user)
+            
+            # Auto-suggest subtasks if it's a complex task
+            subtask_suggestions = generate_subtasks(initial['title'])
+            
+            return render(request, 'tasks/task_form.html', {
+                'form': form,
+                'natural_language': nl_input,
+                'subtask_suggestions': subtask_suggestions,
+                'action': 'Create'
+            })
+        
+        # Normal form submission
+        form = TaskForm(request.POST, user=request.user)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.user = request.user
+            task.save()
+            
+            # Create any subtasks from suggestions
+            subtasks_json = request.POST.get('subtasks_json', '[]')
+            try:
+                subtask_titles = json.loads(subtasks_json)
+                for title in subtask_titles:
+                    SubTask.objects.create(task=task, title=title)
+            except:
+                pass
+            
+            messages.success(request, "Task created with AI!")
+            return redirect('task_list')
+    else:
+        form = TaskForm(user=request.user)
+    
+    return render(request, 'tasks/task_form.html', {
+        'form': form, 
+        'action': 'Create',
+        'subtask_suggestions': []
+    })
+
     if request.method == 'POST':
         form = TaskForm(request.POST, user=request.user)
         if form.is_valid():

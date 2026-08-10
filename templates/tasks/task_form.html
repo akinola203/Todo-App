@@ -1,113 +1,200 @@
-{% extends 'base.html' %}
-
-{% block title %}
-{{ action }} Task - TaskFlow
-{% endblock %}
-
-{% block page_title %}
-{{ action }} Task
-{% endblock %}
-
-{% block content %}
-<div class="form-page">
-    <div class="glass-card form-card">
-        <form method="post" class="task-form">
-            {% csrf_token %}
-
-            <div class="form-row">
-                <div class="form-group full-width">
-                    <label>Title *</label>
-                    {{ form.title }}
-                </div>
-            </div>
-
-            <div class="form-row two-col">
-                <div class="form-group">
-                    <label>Priority</label>
-                    {{ form.priority }}
-                </div>
-                <div class="form-group">
-                    <label>Status</label>
-                    {{ form.status }}
-                </div>
-            </div>
-
-            <div class="form-row two-col">
-                <div class="form-group">
-                    <label>Category</label>
-                    {{ form.category }}
-                </div>
-                <div class="form-group">
-                    <label>Due Date</label>
-                    {{ form.due_date }}
-                </div>
-            </div>
-
-            <div class="form-row two-col">
-                <div class="form-group">
-                    <label>Reminder</label>
-                    {{ form.reminder_at }}
-                    <small class="form-hint">You'll get notified at this time</small>
-                </div>
-                <div class="form-group checkbox-group">
-                    <label class="checkbox-label">
-                        {{ form.is_pinned }}
-                        <span class="checkmark"></span>
-                        <span class="label-text">Pin this task to top</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group full-width">
-                    <label>Description</label>
-                    {{ form.description }}
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group full-width">
-                    <label>Tags</label>
-                    {{ form.tags_input }}
-                </div>
-            </div>
-
-            <!-- Subtasks Section -->
-            {% if task %}
-            <div class="subtasks-section">
-                <h4><i class="fas fa-list-ul"></i> Subtasks</h4>
-                <div class="subtasks-list" id="subtasksList">
-                    {% for sub in subtasks %}
-                    <div class="subtask-item" data-id="{{ sub.id }}">
-<span class="subtask-title
-{% if sub.is_completed %}
-done
-{% endif %}
-">{{ sub.title }}</span>
-                        <button type="button" class="btn-icon" onclick="deleteSubtask({{ sub.id }})">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    {% endfor %}
-                </div>
-                <div class="subtask-add-row">
-                    <input type="text" id="newSubtaskInput" class="form-input" placeholder="Add a subtask...">
-                    <button type="button" class="btn btn-primary" onclick="addSubtask({{ task.id }})">
-                        <i class="fas fa-plus"></i> Add
-                    </button>
-                </div>
-            </div>
-            {% endif %}
-
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="fas fa-save"></i> {{ action }} Task
-                </button>
-                <a href="{% url 'task_list' %}" class="btn btn-ghost">
-                    <i class="fas fa-times"></i> Cancel
-                </a>
-            </div>
-        </form>
+{% extends 'base.html' %} {% block title %} {{ action }} Task - TaskFlow {%
+endblock %} {% block page_title %} {{ action }} Task {% endblock %} {% block
+content %}
+<!-- Smart Create Section -->
+<div
+  class="glass-card"
+  style="margin-bottom: 24px; border: 1px solid var(--purple)"
+>
+  <div
+    style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px"
+  >
+    <i
+      class="fas fa-wand-magic-sparkles"
+      style="color: var(--purple-light); font-size: 1.2rem"
+    ></i>
+    <h3 style="color: var(--purple-light)">Smart Create</h3>
+  </div>
+  <form method="post" class="nl-form">
+    {% csrf_token %}
+    <div class="input-with-icon">
+      <i class="fas fa-keyboard"></i>
+      <input
+        type="text"
+        name="natural_language"
+        class="form-input"
+        placeholder="e.g. 'Call dentist tomorrow at 3pm urgent'"
+        value="{{ natural_language|default:'' }}"
+        style="width: 100%"
+      />
     </div>
+    <button type="submit" class="btn btn-primary" style="margin-top: 12px">
+      <i class="fas fa-bolt"></i> Parse with AI
+    </button>
+  </form>
+
+  {% if subtask_suggestions %}
+  <div
+    style="
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    "
+  >
+    <p
+      style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px"
+    >
+      <i class="fas fa-robot"></i> AI suggested subtasks:
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      {% for sub in subtask_suggestions %}
+      <label class="checkbox-label" style="padding: 8px 12px">
+        <input
+          type="checkbox"
+          name="ai_subtasks"
+          value="{{ sub }}"
+          checked
+          class="form-checkbox"
+          onchange="updateSubtasksJson()"
+        />
+        <span class="label-text" style="font-size: 0.9rem">{{ sub }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    <input
+      type="hidden"
+      name="subtasks_json"
+      id="subtasksJson"
+      value="{{ subtask_suggestions|json_script:'subtasks-data' }}"
+    />
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  function updateSubtasksJson() {
+    const checked = document.querySelectorAll(
+      'input[name="ai_subtasks"]:checked',
+    );
+    const values = Array.from(checked).map((cb) => cb.value);
+    document.getElementById("subtasksJson").value = JSON.stringify(values);
+  }
+  // Initialize on load
+  if (document.getElementById("subtasksJson")) {
+    updateSubtasksJson();
+  }
+</script>
+<div class="form-page">
+  <div class="glass-card form-card">
+    <form method="post" class="task-form">
+      {% csrf_token %}
+
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>Title *</label>
+          {{ form.title }}
+        </div>
+      </div>
+
+      <div class="form-row two-col">
+        <div class="form-group">
+          <label>Priority</label>
+          {{ form.priority }}
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          {{ form.status }}
+        </div>
+      </div>
+
+      <div class="form-row two-col">
+        <div class="form-group">
+          <label>Category</label>
+          {{ form.category }}
+        </div>
+        <div class="form-group">
+          <label>Due Date</label>
+          {{ form.due_date }}
+        </div>
+      </div>
+
+      <div class="form-row two-col">
+        <div class="form-group">
+          <label>Reminder</label>
+          {{ form.reminder_at }}
+          <small class="form-hint">You'll get notified at this time</small>
+        </div>
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            {{ form.is_pinned }}
+            <span class="checkmark"></span>
+            <span class="label-text">Pin this task to top</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>Description</label>
+          {{ form.description }}
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>Tags</label>
+          {{ form.tags_input }}
+        </div>
+      </div>
+
+      <!-- Subtasks Section -->
+      {% if task %}
+      <div class="subtasks-section">
+        <h4><i class="fas fa-list-ul"></i> Subtasks</h4>
+        <div class="subtasks-list" id="subtasksList">
+          {% for sub in subtasks %}
+          <div class="subtask-item" data-id="{{ sub.id }}">
+            <span
+              class="subtask-title {% if sub.is_completed %} done {% endif %}"
+              >{{ sub.title }}</span
+            >
+            <button
+              type="button"
+              class="btn-icon"
+              onclick="deleteSubtask({{ sub.id }})"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="subtask-add-row">
+          <input
+            type="text"
+            id="newSubtaskInput"
+            class="form-input"
+            placeholder="Add a subtask..."
+          />
+          <button
+            type="button"
+            class="btn btn-primary"
+            onclick="addSubtask({{ task.id }})"
+          >
+            <i class="fas fa-plus"></i> Add
+          </button>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="fas fa-save"></i> {{ action }} Task
+        </button>
+        <a href="{% url 'task_list' %}" class="btn btn-ghost">
+          <i class="fas fa-times"></i> Cancel
+        </a>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
