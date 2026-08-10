@@ -1,5 +1,5 @@
-{% extends 'base.html' %} {% block title %} {{ action }} Task - TaskFlow {%
-endblock %} {% block page_title %} {{ action }} Task {% endblock %} {% block
+{% extends 'base.html' %} {% block title %}{{ action }} Task - TaskFlow{%
+endblock %} {% block page_title %}{{ action }} Task{% endblock %} {% block
 content %}
 <div class="form-page">
   <div class="glass-card form-card">
@@ -76,7 +76,7 @@ content %}
           type="hidden"
           name="subtasks_json"
           id="subtasksJson"
-          value="{{ subtask_suggestions|json_script:'subtasks-data' }}"
+          value="[]"
         />
       </div>
       {% endif %}
@@ -90,11 +90,11 @@ content %}
         const values = Array.from(checked).map((cb) => cb.value);
         document.getElementById("subtasksJson").value = JSON.stringify(values);
       }
-      // Initialize on load
       if (document.getElementById("subtasksJson")) {
         updateSubtasksJson();
       }
     </script>
+
     <form method="post" class="task-form">
       {% csrf_token %}
 
@@ -156,15 +156,13 @@ content %}
         </div>
       </div>
 
-      <!-- Subtasks Section -->
       {% if task %}
       <div class="subtasks-section">
         <h4><i class="fas fa-list-ul"></i> Subtasks</h4>
         <div class="subtasks-list" id="subtasksList">
           {% for sub in subtasks %}
           <div class="subtask-item" data-id="{{ sub.id }}">
-            <span
-              class="subtask-title {% if sub.is_completed %} done {% endif %}"
+            <span class="subtask-title {% if sub.is_completed %}done{% endif %}"
               >{{ sub.title }}</span
             >
             <button
