@@ -12,6 +12,12 @@ import json
 from .models import Task, SubTask, Category, Reminder, DailyAnalytics
 from .forms import TaskForm, SubTaskForm, CategoryForm, ReminderForm, SignUpForm
 from .ai_utils import parse_natural_language_task, generate_subtasks
+from .ai_utils import (
+    get_ai_greeting, 
+    get_procrastination_alert, 
+    get_smart_schedule_tip,
+    get_xp_and_level
+)
 
 
 def signup(request):
@@ -33,75 +39,28 @@ def dashboard(request):
     now = timezone.now()
     today = now.date()
 
-    
     total = Task.objects.filter(user=user).count()
     pending = Task.objects.filter(user=user, status='pending').count()
     completed = Task.objects.filter(user=user, status='completed').count()
-    in_progress = Task.objects.filter(user=user, status='in_progress').count()
     overdue = Task.objects.filter(user=user, status__in=['pending', 'in_progress']).filter(due_date__lt=now).count()
     completion_rate = round((completed / total * 100), 1) if total > 0 else 0
 
-    # Recent tasks 
     recent_tasks = Task.objects.filter(user=user).select_related('category')[:8]
+    urgent_tasks = Task.objects.filter(user=user, priority='urgent', status__in=['pending', 'in_progress']).order_by('due_date')[:5]
 
-    # Urgent tasks
-    urgent_tasks = Task.objects.filter(
-        user=user, 
-        priority='urgent',
-        status__in=['pending', 'in_progress']
-    ).order_by('due_date')[:5]
-
-    # Tasks due the same day 
-    today_tasks = Task.objects.filter(
-        user=user,
-        status__in=['pending', 'in_progress'],
-        due_date__date=today
-    )
-
-    # Category distribution
-    category_stats = Category.objects.filter(user=user).annotate(
-        task_count=Count('tasks')
-    ).values('name', 'color', 'task_count')
-
-    # Weekly analytics
-    week_start = today - timedelta(days=6)
-    weekly_data = DailyAnalytics.objects.filter(
-        user=user, 
-        date__gte=week_start
-    ).order_by('date')
-
-    # Priority breakdown
-    priority_breakdown = Task.objects.filter(user=user).values('priority').annotate(
-        count=Count('id')
-    ).order_by('priority')
-
-    # Productivity streak
-    streak = 0
-    check_date = today
-    while True:
-        analytics = DailyAnalytics.objects.filter(user=user, date=check_date).first()
-        if analytics and analytics.tasks_completed > 0:
-            streak += 1
-            check_date -= timedelta(days=1)
-        else:
-            break
+    ai_greeting = get_ai_greeting(user)
+    procrastination_alert = get_procrastination_alert(user)
+    schedule_tip = get_smart_schedule_tip(user)
+    gamification = get_xp_and_level(user)
 
     context = {
-        'stats': {
-            'total': total,
-            'pending': pending,
-            'completed': completed,
-            'in_progress': in_progress,
-            'overdue': overdue,
-            'completion_rate': completion_rate,
-        },
+        'stats': {'total': total, 'pending': pending, 'completed': completed, 'overdue': overdue, 'completion_rate': completion_rate},
         'recent_tasks': recent_tasks,
         'urgent_tasks': urgent_tasks,
-        'today_tasks': today_tasks,
-        'category_stats': list(category_stats),
-        'weekly_data': weekly_data,
-        'priority_breakdown': list(priority_breakdown),
-        'streak': streak,
+        'ai_greeting': ai_greeting,
+        'procrastination_alert': procrastination_alert,
+        'schedule_tip': schedule_tip,
+        'gamification': gamification,
     }
     return render(request, 'tasks/dashboard.html', context)
 

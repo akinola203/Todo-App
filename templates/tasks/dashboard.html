@@ -1,51 +1,99 @@
-{% extends 'base.html' %} {% block title %} Dashboard - TaskFlow {% endblock %}
-{% block page_title %} Dashboard {% endblock %} {% block content %}
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - TaskFlow{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
 <div class="dashboard">
-  <div class="stats-grid">
-    <div class="stat-card glow-purple">
-      <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
-      <div class="stat-info">
-        <h3>{{ stats.total }}</h3>
-        <p>Total Tasks</p>
+
+  <!-- AI Personality: Nova -->
+  <div class="glass-card" style="border: 1px solid var(--purple); margin-bottom: 24px; position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -20px; right: -20px; font-size: 6rem; opacity: 0.05; color: var(--purple);">
+      <i class="fas fa-robot"></i>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+      <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--purple), var(--purple-dark)); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);">
+        🤖
+      </div>
+      <div>
+        <h3 style="font-size: 1.1rem; color: var(--purple-light);">{{ ai_greeting.name }}</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">{{ ai_greeting.greeting }}</p>
+      </div>
+      {% if ai_greeting.streak_msg %}
+      <span style="margin-left: auto; background: linear-gradient(135deg, #f59e0b, #ef4444); padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">{{ ai_greeting.streak_msg }}</span>
+      {% endif %}
+    </div>
+    <p style="font-size: 1rem; margin-bottom: 16px; padding: 12px; background: rgba(139, 92, 246, 0.05); border-radius: 10px; border-left: 3px solid var(--purple);">
+      "{{ ai_greeting.encouragement }}"
+    </p>
+    {% if procrastination_alert %}
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(239, 68, 68, 0.08); border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 12px;">
+      <i class="fas fa-exclamation-circle" style="color: var(--red); font-size: 1.2rem;"></i>
+      <div style="flex: 1;">
+        <p style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 4px;"><strong>{{ procrastination_alert.roast }}</strong></p>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">{{ procrastination_alert.suggestion }}</p>
       </div>
     </div>
-    <div class="stat-card glow-blue">
-      <div class="stat-icon"><i class="fas fa-clock"></i></div>
-      <div class="stat-info">
-        <h3>{{ stats.pending }}</h3>
-        <p>Pending</p>
-      </div>
+    {% endif %}
+    {% if schedule_tip %}
+    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(16, 185, 129, 0.08); border-radius: 10px;">
+      <i class="fas fa-brain" style="color: var(--green);"></i>
+      <span style="font-size: 0.9rem; color: var(--text-secondary);">{{ schedule_tip }}</span>
     </div>
-    <div class="stat-card glow-green">
-      <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-      <div class="stat-info">
-        <h3>{{ stats.completed }}</h3>
-        <p>Completed</p>
+    {% endif %}
+  </div>
+
+  <!-- Gamification Bar -->
+  <div class="glass-card" style="margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 1.3rem;">🏆</span>
+        <div>
+          <h4 style="font-size: 1rem;">Level {{ gamification.level }} — {{ gamification.title }}</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">{{ gamification.completed_count }} tasks completed • {{ gamification.xp }} XP</p>
+        </div>
       </div>
+      <span style="font-size: 0.85rem; color: var(--purple-light); font-weight: 700;">{{ gamification.progress }}/100 XP</span>
     </div>
-    <div class="stat-card glow-red">
-      <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-      <div class="stat-info">
-        <h3>{{ stats.overdue }}</h3>
-        <p>Overdue</p>
-      </div>
+    <div style="height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden;">
+      <div style="height: 100%; width: {{ gamification.progress }}%; background: linear-gradient(90deg, var(--purple), var(--purple-light)); border-radius: 4px; transition: width 0.5s;"></div>
     </div>
   </div>
 
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card glow-purple">
+      <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+      <div class="stat-info"><h3>{{ stats.total }}</h3><p>Total Tasks</p></div>
+    </div>
+    <div class="stat-card glow-blue">
+      <div class="stat-icon"><i class="fas fa-clock"></i></div>
+      <div class="stat-info"><h3>{{ stats.pending }}</h3><p>Pending</p></div>
+    </div>
+    <div class="stat-card glow-green">
+      <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-info"><h3>{{ stats.completed }}</h3><p>Completed</p></div>
+    </div>
+    <div class="stat-card glow-red">
+      <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+      <div class="stat-info"><h3>{{ stats.overdue }}</h3><p>Overdue</p></div>
+    </div>
+  </div>
+
+  <!-- Progress Section -->
   <div class="progress-section glass-card">
     <div class="progress-header">
       <h3><i class="fas fa-chart-line"></i> Completion Rate</h3>
       <span class="progress-percentage">{{ stats.completion_rate }}%</span>
     </div>
     <div class="progress-bar-bg">
-      <div
-        class="progress-bar-fill"
-        style="width: {{ stats.completion_rate }}%"
-      ></div>
+      <div class="progress-bar-fill" style="width: {{ stats.completion_rate }}%"></div>
     </div>
   </div>
 
   <div class="dashboard-grid">
+    <!-- Recent Tasks -->
     <div class="glass-card task-section">
       <div class="section-header">
         <h3><i class="fas fa-bolt"></i> Recent Tasks</h3>
@@ -53,27 +101,18 @@
       </div>
       <div class="task-list-compact">
         {% for task in recent_tasks %}
-        <div
-          class="task-item-compact {% if task.is_overdue %} overdue {% endif %}"
-        >
+        <div class="task-item-compact {% if task.is_overdue %}overdue{% endif %}">
           <div class="task-checkbox-wrapper">
             <button class="task-toggle" data-task-id="{{ task.id }}">
-              <i
-                class="far {% if task.status == 'completed' %} fa-check-square {% else %} fa-square {% endif %}"
-              ></i>
+              <i class="far {% if task.status == 'completed' %}fa-check-square{% else %}fa-square{% endif %}"></i>
             </button>
           </div>
           <div class="task-content">
             <span class="task-title">{{ task.title }}</span>
             <span class="task-meta">
-              <span class="badge-priority {{ task.priority }}"
-                >{{ task.priority }}</span
-              >
+              <span class="badge-priority {{ task.priority }}">{{ task.priority }}</span>
               {% if task.due_date %}
-              <span class="task-due">
-                <i class="far fa-clock"></i>
-                {{ task.due_date|date:"M d" }}
-              </span>
+              <span class="task-due"><i class="far fa-clock"></i> {{ task.due_date|date:"M d" }}</span>
               {% endif %}
             </span>
           </div>
@@ -87,6 +126,7 @@
       </div>
     </div>
 
+    <!-- Urgent Tasks -->
     <div class="glass-card task-section">
       <div class="section-header">
         <h3><i class="fas fa-fire"></i> Urgent Priority</h3>
@@ -98,15 +138,11 @@
             <span class="task-title">{{ task.title }}</span>
             <span class="task-meta">
               {% if task.due_date %}
-              <span class="task-due urgent-text"
-                >Due {{ task.due_date|timeuntil }}</span
-              >
+              <span class="task-due urgent-text">Due {{ task.due_date|timeuntil }}</span>
               {% endif %}
             </span>
           </div>
-          <a href="{% url 'task_update' task.id %}" class="btn-icon"
-            ><i class="fas fa-edit"></i
-          ></a>
+          <a href="{% url 'task_update' task.id %}" class="btn-icon"><i class="fas fa-edit"></i></a>
         </div>
         {% empty %}
         <div class="empty-state">
