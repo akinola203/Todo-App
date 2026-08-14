@@ -3,7 +3,7 @@ endblock %} {% block page_title %}{{ action }} Task{% endblock %} {% block
 content %}
 <div class="form-page">
   <div class="glass-card form-card">
-    <!-- SMART CREATE: Always visible, separate mini-form -->
+    <!-- SMART CREATE: Separate mini-form -->
     <div
       class="glass-card"
       style="margin-bottom: 24px; border: 1px solid var(--purple)"
@@ -103,7 +103,7 @@ content %}
         </div>
       </div>
 
-      <!-- AI SUBTASKS: Now INSIDE the main form so they actually submit -->
+      <!-- AI SUBTASKS: NOW INSIDE the main form -->
       {% if subtask_suggestions %}
       <div
         class="subtasks-section"
