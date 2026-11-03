@@ -1,10 +1,11 @@
 services:
-  # 1. Web Application Service
+  # 1. Web Application Service (Runs Gunicorn + Celery in background)
   - type: web
     name: taskflow
     runtime: python
+    plan: free
     buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
-    startCommand: "gunicorn todo_desktop.wsgi:application"
+    startCommand: "celery -A todo_desktop worker --beat --loglevel=info --detach && gunicorn todo_desktop.wsgi:application"
     healthCheckPath: "/ht/"
     envVars:
       - key: PYTHON_VERSION
@@ -42,64 +43,16 @@ services:
       - key: EMAIL_HOST_PASSWORD
         sync: false
 
-  # 2. Celery Background Worker & Beat Scheduler
-  - type: worker
-    name: taskflow-worker
-    runtime: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "celery -A todo_desktop worker --beat --loglevel=info"
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: taskflow
-          envVarKey: SECRET_KEY
-      - key: DATABASE_URL
-        fromDatabase:
-          name: taskflow-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: taskflow-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: taskflow-redis
-          property: connectionString
-      - key: VAPID_PRIVATE_KEY
-        fromService:
-          type: web
-          name: taskflow
-          envVarKey: VAPID_PRIVATE_KEY
-      - key: VAPID_ADMIN_EMAIL
-        fromService:
-          type: web
-          name: taskflow
-          envVarKey: VAPID_ADMIN_EMAIL
-      - key: EMAIL_HOST_USER
-        fromService:
-          type: web
-          name: taskflow
-          envVarKey: EMAIL_HOST_USER
-      - key: EMAIL_HOST_PASSWORD
-        fromService:
-          type: web
-          name: taskflow
-          envVarKey: EMAIL_HOST_PASSWORD
+  # 2. Managed Redis (Key-Value Cache & Queue)
+  - type: redis
+    name: taskflow-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
 # 3. Managed PostgreSQL Database
 databases:
   - name: taskflow-db
+    plan: free
     databaseName: taskflow
     user: taskflow_user
-    plan: starter
-
-# 4. Managed Redis Cache & Queue
-redis:
-  - name: taskflow-redis
-    plan: starter
-    maxmemoryPolicy: allkeys-lru
