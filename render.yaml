@@ -31,6 +31,16 @@ services:
           property: connectionString
       - key: GEMINI_API_KEY
         sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_ADMIN_EMAIL
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
 
   # 2. Celery Background Worker & Beat Scheduler
   - type: worker
@@ -60,6 +70,26 @@ services:
           type: redis
           name: taskflow-redis
           property: connectionString
+      - key: VAPID_PRIVATE_KEY
+        fromService:
+          type: web
+          name: taskflow
+          envVarKey: VAPID_PRIVATE_KEY
+      - key: VAPID_ADMIN_EMAIL
+        fromService:
+          type: web
+          name: taskflow
+          envVarKey: VAPID_ADMIN_EMAIL
+      - key: EMAIL_HOST_USER
+        fromService:
+          type: web
+          name: taskflow
+          envVarKey: EMAIL_HOST_USER
+      - key: EMAIL_HOST_PASSWORD
+        fromService:
+          type: web
+          name: taskflow
+          envVarKey: EMAIL_HOST_PASSWORD
 
 # 3. Managed PostgreSQL Database
 databases:
