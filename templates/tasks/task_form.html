@@ -1,6 +1,8 @@
-{% extends 'base.html' %} {% block title %}{{ action }} Task - TaskFlow{%
-endblock %} {% block page_title %}{{ action }} Task{% endblock %} {% block
-content %}
+{% extends 'base.html' %} 
+{% block title %}{{ action }} Task - TaskFlow{% endblock %} 
+{% block page_title %}{{ action }} Task{% endblock %} 
+
+{% block content %}
 <div class="form-page">
   <div class="glass-card form-card">
     <!-- SMART CREATE: Separate mini-form -->
@@ -20,7 +22,7 @@ content %}
           class="fas fa-wand-magic-sparkles"
           style="color: var(--purple-light); font-size: 1.2rem"
         ></i>
-        <h3 style="color: var(--purple-light)">Smart Create</h3>
+        <h3 style="color: var(--purple-light)">Smart Create with AI</h3>
       </div>
       <form method="post" class="nl-form">
         {% csrf_token %}
@@ -30,7 +32,7 @@ content %}
             type="text"
             name="natural_language"
             class="form-input"
-            placeholder="e.g. 'Call dentist tomorrow at 3pm urgent'"
+            placeholder="e.g. 'Finish project report by Friday 5pm urgent'"
             value="{{ natural_language|default:'' }}"
             style="width: 100%"
           />
@@ -49,6 +51,9 @@ content %}
         <div class="form-group full-width">
           <label>Title *</label>
           {{ form.title }}
+          {% if form.title.errors %}
+          <div class="alert alert-error">{{ form.title.errors.0 }}</div>
+          {% endif %}
         </div>
       </div>
 
@@ -71,6 +76,9 @@ content %}
         <div class="form-group">
           <label>Due Date</label>
           {{ form.due_date }}
+          {% if form.due_date.errors %}
+          <div class="alert alert-error">{{ form.due_date.errors.0 }}</div>
+          {% endif %}
         </div>
       </div>
 
@@ -78,14 +86,35 @@ content %}
         <div class="form-group">
           <label>Reminder</label>
           {{ form.reminder_at }}
-          <small class="form-hint">You'll get notified at this time</small>
+          <small class="form-hint">Receive notification via email & web push</small>
+          {% if form.reminder_at.errors %}
+          <div class="alert alert-error">{{ form.reminder_at.errors.0 }}</div>
+          {% endif %}
         </div>
-        <div class="form-group checkbox-group">
+        <div class="form-group checkbox-group" style="align-self: center;">
           <label class="checkbox-label">
             {{ form.is_pinned }}
             <span class="checkmark"></span>
             <span class="label-text">Pin this task to top</span>
           </label>
+        </div>
+      </div>
+
+      <!-- Recurrence Controls -->
+      <div class="form-row two-col" style="background: rgba(139, 92, 246, 0.05); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.2); margin-bottom: 20px;">
+        <div class="form-group checkbox-group" style="margin-bottom: 0;">
+          <label class="checkbox-label">
+            {{ form.is_recurring }}
+            <span class="checkmark"></span>
+            <span class="label-text"><i class="fas fa-repeat"></i> Recurring Task</span>
+          </label>
+        </div>
+        <div class="form-group" id="recurrenceIntervalGroup" style="margin-bottom: 0;">
+          <label>Recurrence Frequency</label>
+          {{ form.recurrence_interval }}
+          {% if form.recurrence_interval.errors %}
+          <div class="alert alert-error">{{ form.recurrence_interval.errors.0 }}</div>
+          {% endif %}
         </div>
       </div>
 
@@ -103,7 +132,7 @@ content %}
         </div>
       </div>
 
-      <!-- AI SUBTASKS: NOW INSIDE the main form -->
+      <!-- AI SUBTASKS: INSIDE the main form -->
       {% if subtask_suggestions %}
       <div
         class="subtasks-section"
@@ -220,10 +249,26 @@ content %}
       'input[name="ai_subtasks"]:checked',
     );
     const values = Array.from(checked).map((cb) => cb.value);
-    document.getElementById("subtasksJson").value = JSON.stringify(values);
+    const target = document.getElementById("subtasksJson");
+    if (target) {
+      target.value = JSON.stringify(values);
+    }
   }
   if (document.getElementById("subtasksJson")) {
     updateSubtasksJson();
+  }
+
+  // Recurrence toggle helper
+  const isRecurCheckbox = document.getElementById('id_is_recurring');
+  const recurGroup = document.getElementById('recurrenceIntervalGroup');
+  function checkRecurVisibility() {
+    if (isRecurCheckbox && recurGroup) {
+      recurGroup.style.display = isRecurCheckbox.checked ? 'block' : 'none';
+    }
+  }
+  if (isRecurCheckbox) {
+    isRecurCheckbox.addEventListener('change', checkRecurVisibility);
+    checkRecurVisibility();
   }
 </script>
 {% endblock %}

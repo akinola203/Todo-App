@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Archive Task - TaskFlow
+{% endblock %}
+
+{% block page_title %}
+Archive Task
+{% endblock %}
+
+{% block content %}
+<div class="confirm-page">
+    <div class="glass-card confirm-card">
+        <div class="confirm-icon warning"><i class="fas fa-archive"></i></div>
+        <h2>Archive Task?</h2>
+        <p>Are you sure you want to archive <strong>"{{ task.title }}"</strong>?</p>
+        <p class="text-muted">You can view archived tasks anytime from the Archived section.</p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="confirm-actions">
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-archive"></i> Archive Task
+                </button>
+                <a href="{% url 'task_list' %}" class="btn btn-ghost">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

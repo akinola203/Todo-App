@@ -1,5 +1,8 @@
+// TaskFlow Main Application JS
+let deferredInstallPrompt = null;
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Mobile menu toggle
+    // 1. Mobile menu toggle
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
 
@@ -16,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Auto-dismiss alerts after 5 seconds
+    // 2. Auto-dismiss alerts after 5 seconds
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => {
         setTimeout(() => {
@@ -26,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 
-    // Animate progress bars on load
+    // 3. Animate progress bars on load
     const progressBars = document.querySelectorAll('.progress-bar-fill');
     progressBars.forEach(bar => {
         const width = bar.style.width;
@@ -36,30 +39,56 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 200);
     });
 
-    // Animate stat cards on scroll
+    // 4. Animate stat cards on scroll
     const statCards = document.querySelectorAll('.stat-card');
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry, index) => {
-            if (entry.isIntersecting) {
-                setTimeout(() => {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }, index * 100);
-            }
-        });
-    }, { threshold: 0.1 });
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }, index * 100);
+                }
+            });
+        }, { threshold: 0.1 });
 
-    statCards.forEach(card => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
-        card.style.transition = 'all 0.5s ease';
-        observer.observe(card);
+        statCards.forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.5s ease';
+            observer.observe(card);
+        });
+    }
+
+    // 5. PWA Install Prompt Handler
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const installBtn = document.getElementById('pwaInstallBtn');
+        if (installBtn) {
+            installBtn.style.display = 'flex';
+            installBtn.addEventListener('click', async () => {
+                if (deferredInstallPrompt) {
+                    deferredInstallPrompt.prompt();
+                    const { outcome } = await deferredInstallPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        installBtn.style.display = 'none';
+                    }
+                    deferredInstallPrompt = null;
+                }
+            });
+        }
     });
+
+    // 6. Push notification prompt check
+    initPushNotificationBtn();
 });
 
 // Toggle task status (AJAX)
 function toggleTaskStatus(btn) {
     const taskId = btn.dataset.taskId;
+    if (!taskId) return;
     const csrftoken = getCookie('csrftoken');
 
     fetch(`/tasks/${taskId}/toggle/`, {
@@ -67,35 +96,39 @@ function toggleTaskStatus(btn) {
         headers: {
             'X-CSRFToken': csrftoken,
             'Content-Type': 'application/json',
+            'Accept': 'application/json'
         },
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
     .then(data => {
         const icon = btn.querySelector('i');
         const text = btn.querySelector('span');
 
         if (data.status === 'completed') {
             btn.classList.add('completed');
-            icon.className = 'fas fa-check-circle';
-            text.textContent = 'Completed';
-            // Add completion animation
+            if (icon) icon.className = 'fas fa-check-circle';
+            if (text) text.textContent = 'Completed';
             btn.style.animation = 'pulse 0.5s ease';
             setTimeout(() => btn.style.animation = '', 500);
         } else {
             btn.classList.remove('completed');
-            icon.className = 'fas fa-circle';
-            text.textContent = 'Mark Done';
+            if (icon) icon.className = 'fas fa-circle';
+            if (text) text.textContent = 'Mark Done';
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => console.error('Error toggling task:', error));
 }
 
 // Dropdown toggle
 function toggleDropdown(btn) {
     const dropdown = btn.nextElementSibling;
+    if (!dropdown) return;
     const isOpen = dropdown.classList.contains('show');
 
-    // Close all dropdowns
+    // Close all other dropdowns
     document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('show'));
 
     if (!isOpen) {
@@ -111,9 +144,10 @@ function toggleDropdown(btn) {
     });
 }
 
-// Add subtask
+// Add subtask (AJAX)
 function addSubtask(taskId) {
     const input = document.getElementById('newSubtaskInput');
+    if (!input) return;
     const title = input.value.trim();
     if (!title) return;
 
@@ -123,11 +157,15 @@ function addSubtask(taskId) {
         method: 'POST',
         headers: {
             'X-CSRFToken': csrftoken,
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
         },
-        body: `title=${encodeURIComponent(title)}`,
+        body: JSON.stringify({ title: title }),
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) throw new Error('Subtask creation failed');
+        return response.json();
+    })
     .then(data => {
         if (data.id) {
             const list = document.getElementById('subtasksList');
@@ -135,7 +173,7 @@ function addSubtask(taskId) {
             item.className = 'subtask-item';
             item.dataset.id = data.id;
             item.innerHTML = `
-                <span class="subtask-title">${data.title}</span>
+                <span class="subtask-title">${escapeHtml(data.title)}</span>
                 <button type="button" class="btn-icon" onclick="deleteSubtask(${data.id})">
                     <i class="fas fa-times"></i>
                 </button>
@@ -144,10 +182,10 @@ function addSubtask(taskId) {
             input.value = '';
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => console.error('Error adding subtask:', error));
 }
 
-// Delete subtask
+// Delete subtask (AJAX)
 function deleteSubtask(subtaskId) {
     const csrftoken = getCookie('csrftoken');
 
@@ -156,9 +194,13 @@ function deleteSubtask(subtaskId) {
         headers: {
             'X-CSRFToken': csrftoken,
             'Content-Type': 'application/json',
+            'Accept': 'application/json'
         },
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) throw new Error('Subtask deletion failed');
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             const item = document.querySelector(`.subtask-item[data-id="${subtaskId}"]`);
@@ -169,7 +211,82 @@ function deleteSubtask(subtaskId) {
             }
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => console.error('Error deleting subtask:', error));
+}
+
+// Web Push Notification setup
+function initPushNotificationBtn() {
+    const pushBtn = document.getElementById('enablePushBtn');
+    if (!pushBtn) return;
+
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        pushBtn.style.display = 'none';
+        return;
+    }
+
+    if (Notification.permission === 'granted') {
+        pushBtn.innerHTML = '<i class="fas fa-bell"></i> Push Enabled';
+        pushBtn.disabled = true;
+        pushBtn.classList.add('btn-ghost');
+    } else {
+        pushBtn.addEventListener('click', subscribeUserToPush);
+    }
+}
+
+async function subscribeUserToPush() {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            alert('Push notifications permission was denied.');
+            return;
+        }
+
+        const registration = await navigator.serviceWorker.ready;
+        const keyResponse = await fetch('/api/push/vapid-key/');
+        const { publicKey } = await keyResponse.json();
+
+        if (!publicKey) {
+            console.warn('VAPID public key not configured on server.');
+            return;
+        }
+
+        const applicationServerKey = urlB64ToUint8Array(publicKey);
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: applicationServerKey
+        });
+
+        const csrftoken = getCookie('csrftoken');
+        const saveResponse = await fetch('/api/push/subscribe/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(subscription)
+        });
+
+        if (saveResponse.ok) {
+            const pushBtn = document.getElementById('enablePushBtn');
+            if (pushBtn) {
+                pushBtn.innerHTML = '<i class="fas fa-bell"></i> Push Enabled';
+                pushBtn.disabled = true;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to subscribe user to push:', error);
+    }
+}
+
+function urlB64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
 }
 
 // CSRF token helper
@@ -186,4 +303,13 @@ function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+function escapeHtml(str) {
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }

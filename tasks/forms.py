@@ -28,7 +28,11 @@ class TaskForm(forms.ModelForm):
 
     class Meta:
         model = Task
-        fields = ['title', 'description', 'priority', 'status', 'category', 'due_date', 'reminder_at', 'is_pinned']
+        fields = [
+            'title', 'description', 'priority', 'status', 
+            'category', 'due_date', 'reminder_at', 
+            'is_pinned', 'is_recurring', 'recurrence_interval'
+        ]
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Task title'}),
             'description': forms.Textarea(attrs={'class': 'form-textarea', 'placeholder': 'Add details...', 'rows': 4}),
@@ -37,6 +41,8 @@ class TaskForm(forms.ModelForm):
             'category': forms.Select(attrs={'class': 'form-select'}),
             'due_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-input'}),
             'is_pinned': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+            'is_recurring': forms.CheckboxInput(attrs={'class': 'form-checkbox', 'id': 'id_is_recurring'}),
+            'recurrence_interval': forms.Select(attrs={'class': 'form-select', 'id': 'id_recurrence_interval'}),
         }
 
     def __init__(self, *args, user=None, **kwargs):
@@ -62,6 +68,14 @@ class TaskForm(forms.ModelForm):
         if reminder and reminder < timezone.now():
             raise forms.ValidationError("Reminder cannot be in the past.")
         return reminder
+
+    def clean(self):
+        cleaned_data = super().clean()
+        is_recurring = cleaned_data.get('is_recurring')
+        interval = cleaned_data.get('recurrence_interval')
+        if is_recurring and not interval:
+            self.add_error('recurrence_interval', 'Please select a recurrence interval for recurring tasks.')
+        return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -105,10 +119,12 @@ class SignUpForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password1', 'password2')
+        fields = ('username', 'email')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].widget.attrs.update({'class': 'form-input', 'placeholder': 'Username'})
-        self.fields['password1'].widget.attrs.update({'class': 'form-input', 'placeholder': 'Password'})
-        self.fields['password2'].widget.attrs.update({'class': 'form-input', 'placeholder': 'Confirm Password'})
+        if 'password1' in self.fields:
+            self.fields['password1'].widget.attrs.update({'class': 'form-input', 'placeholder': 'Password'})
+        if 'password2' in self.fields:
+            self.fields['password2'].widget.attrs.update({'class': 'form-input', 'placeholder': 'Confirm Password'})

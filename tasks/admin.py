@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import Task, SubTask, Category, Reminder, DailyAnalytics
+from .models import Task, SubTask, Category, Reminder, DailyAnalytics, PushSubscription
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ['title', 'user', 'priority', 'status', 'due_date', 'is_overdue', 'is_pinned']
-    list_filter = ['priority', 'status', 'created_at']
+    list_display = ['title', 'user', 'priority', 'status', 'due_date', 'is_recurring', 'is_overdue', 'is_pinned']
+    list_filter = ['priority', 'status', 'is_recurring', 'created_at']
     search_fields = ['title', 'description']
     date_hierarchy = 'created_at'
 
@@ -26,3 +26,8 @@ class ReminderAdmin(admin.ModelAdmin):
 class DailyAnalyticsAdmin(admin.ModelAdmin):
     list_display = ['user', 'date', 'tasks_created', 'tasks_completed', 'completion_rate']
     date_hierarchy = 'date'
+
+@admin.register(PushSubscription)
+class PushSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ['user', 'endpoint', 'created_at']
+    search_fields = ['user__username', 'endpoint']

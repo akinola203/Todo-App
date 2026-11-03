@@ -1,0 +1,91 @@
+name: TaskFlow CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: taskflow_test
+          POSTGRES_USER: taskflow_user
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SECRET_KEY: 'test-secret-key-for-github-actions-ci'
+      DEBUG: 'False'
+      ALLOWED_HOSTS: 'localhost,127.0.0.1'
+      DATABASE_URL: 'postgres://taskflow_user:testpassword@localhost:5432/taskflow_test'
+      CELERY_BROKER_URL: 'redis://localhost:6379/0'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Django System Checks
+        run: |
+          python manage.py check
+
+      - name: Run Database Migrations
+        run: |
+          python manage.py migrate
+
+      - name: Run Unit & Integration Tests
+        run: |
+          python manage.py test
+
+  deploy:
+    name: Deploy to Render
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deployment Webhook
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            echo "Triggering Render deploy hook..."
+            curl -f -X POST "$RENDER_DEPLOY_HOOK"
+            echo "Deploy triggered successfully."
+          else
+            echo "RENDER_DEPLOY_HOOK_URL not configured. Skipping deploy trigger."
+          fi
+

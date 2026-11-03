@@ -9,17 +9,29 @@ urlpatterns = [
     path('tasks/<int:pk>/delete/', views.task_delete, name='task_delete'),
     path('tasks/<int:pk>/toggle/', views.task_toggle, name='task_toggle'),
     path('tasks/<int:pk>/archive/', views.task_archive, name='task_archive'),
+    path('tasks/<int:pk>/reschedule/', views.task_reschedule, name='task_reschedule'),
     path('tasks/archived/', views.archived_tasks, name='archived_tasks'),
+    path('tasks/export/ics/', views.export_tasks_ics, name='export_tasks_ics'),
 
+    # Subtasks
     path('tasks/<int:task_pk>/subtask/create/', views.subtask_create, name='subtask_create'),
     path('subtasks/<int:pk>/toggle/', views.subtask_toggle, name='subtask_toggle'),
     path('subtasks/<int:pk>/delete/', views.subtask_delete, name='subtask_delete'),
 
+    # Categories
     path('categories/', views.category_list, name='category_list'),
     path('categories/create/', views.category_create, name='category_create'),
     path('categories/<int:pk>/delete/', views.category_delete, name='category_delete'),
 
-    path('analytics/', views.analytics, name='analytics'),
+    # Calendar View & API
+    path('calendar/', views.calendar_view, name='calendar_view'),
+    path('api/calendar/events/', views.calendar_events_api, name='calendar_events_api'),
 
+    # Web Push
+    path('api/push/subscribe/', views.push_subscribe, name='push_subscribe'),
+    path('api/push/vapid-key/', views.get_vapid_public_key, name='get_vapid_public_key'),
+
+    # Analytics & Auth
+    path('analytics/', views.analytics, name='analytics'),
     path('signup/', views.signup, name='signup'),
 ]

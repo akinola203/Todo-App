@@ -33,6 +33,12 @@ class Task(models.Model):
         ('archived', 'Archived'),
     ]
 
+    RECURRENCE_CHOICES = [
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -43,6 +49,8 @@ class Task(models.Model):
     reminder_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     is_pinned = models.BooleanField(default=False)
+    is_recurring = models.BooleanField(default=False)
+    recurrence_interval = models.CharField(max_length=10, choices=RECURRENCE_CHOICES, null=True, blank=True)
     tags = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -116,3 +124,18 @@ class DailyAnalytics(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
+
+
+class PushSubscription(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='push_subscriptions')
+    endpoint = models.TextField(unique=True)
+    p256dh = models.CharField(max_length=255)
+    auth = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Push Subscription"
+        verbose_name_plural = "Push Subscriptions"
+
+    def __str__(self):
+        return f"PushSubscription for {self.user.username}"
