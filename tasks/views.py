@@ -313,6 +313,7 @@ def subtask_create(request, task_pk):
     if not title:
         return JsonResponse({'error': 'Title is required'}, status=400)
 
+    title = title[:200]
     subtask = SubTask.objects.create(task=task, title=title)
     return JsonResponse({'id': subtask.id, 'title': subtask.title})
 
@@ -442,26 +443,29 @@ def analytics(request):
 def push_subscribe(request):
     try:
         data = json.loads(request.body)
-        endpoint = data.get('endpoint')
+        endpoint = str(data.get('endpoint', '')).strip()
         keys = data.get('keys', {})
-        p256dh = keys.get('p256dh')
-        auth = keys.get('auth')
+        p256dh = str(keys.get('p256dh', '')).strip()
+        auth = str(keys.get('auth', '')).strip()
 
         if not endpoint or not p256dh or not auth:
             return JsonResponse({'error': 'Invalid subscription payload'}, status=400)
 
+        # Remove stale endpoint for other users to prevent cross-account delivery
+        PushSubscription.objects.filter(endpoint=endpoint).exclude(user=request.user).delete()
+
         PushSubscription.objects.update_or_create(
+            user=request.user,
             endpoint=endpoint,
             defaults={
-                'user': request.user,
-                'p256dh': p256dh,
-                'auth': auth,
+                'p256dh': p256dh[:255],
+                'auth': auth[:255],
             }
         )
         return JsonResponse({'status': 'subscribed'})
     except (json.JSONDecodeError, Exception) as e:
         logger.error(f"Push subscribe error: {e}")
-        return JsonResponse({'error': str(e)}, status=400)
+        return JsonResponse({'error': 'Subscription processing failed'}, status=400)
 
 
 @login_required
@@ -536,7 +540,8 @@ def task_reschedule(request, pk):
         task.save(update_fields=['due_date'])
         return JsonResponse({'success': True, 'new_due_date': task.due_date.isoformat()})
     except (json.JSONDecodeError, Exception) as e:
-        return JsonResponse({'error': str(e)}, status=400)
+        logger.error(f"Task reschedule error: {e}")
+        return JsonResponse({'error': 'Failed to reschedule task'}, status=400)
 
 
 @login_required

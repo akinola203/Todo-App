@@ -207,3 +207,101 @@ class AIUtilsAndCeleryTests(TestCase):
         self.assertEqual(new_task.subtasks.count(), 1)
         self.assertFalse(new_task.subtasks.first().is_completed)
 
+
+class SecurityAuditTests(TestCase):
+    def setUp(self):
+        self.client_a = Client()
+        self.user_a = User.objects.create_user(username='usera', password='UserA_Password123!', email='usera@example.com')
+        self.client_a.login(username='usera', password='UserA_Password123!')
+
+        self.client_b = Client()
+        self.user_b = User.objects.create_user(username='userb', password='UserB_Password123!', email='userb@example.com')
+        self.client_b.login(username='userb', password='UserB_Password123!')
+
+        self.cat_a = Category.objects.create(name='Private A', user=self.user_a, color='#123456')
+        self.task_a = Task.objects.create(user=self.user_a, title='User A Task', category=self.cat_a)
+        self.subtask_a = SubTask.objects.create(task=self.task_a, title='Private Subtask')
+
+    def test_unauthenticated_access_redirects_to_login(self):
+        anon_client = Client()
+        protected_urls = [
+            reverse('dashboard'),
+            reverse('task_list'),
+            reverse('calendar_view'),
+            reverse('analytics'),
+            reverse('category_list'),
+            reverse('task_create'),
+        ]
+        for url in protected_urls:
+            res = anon_client.get(url)
+            self.assertEqual(res.status_code, 302, f"URL {url} should redirect unauthenticated users to login")
+            self.assertIn(reverse('login'), res.url)
+
+    def test_idor_task_endpoints_prevent_cross_user_access(self):
+        # User B attempts to edit User A's task -> 404
+        res_edit = self.client_b.get(reverse('task_update', args=[self.task_a.id]))
+        self.assertEqual(res_edit.status_code, 404)
+
+        # User B attempts to delete User A's task -> 404
+        res_del = self.client_b.post(reverse('task_delete', args=[self.task_a.id]))
+        self.assertEqual(res_del.status_code, 404)
+
+        # User B attempts to toggle User A's task -> 404
+        res_toggle = self.client_b.post(reverse('task_toggle', args=[self.task_a.id]))
+        self.assertEqual(res_toggle.status_code, 404)
+
+        # User B attempts to archive User A's task -> 404
+        res_archive = self.client_b.post(reverse('task_archive', args=[self.task_a.id]))
+        self.assertEqual(res_archive.status_code, 404)
+
+        # User B attempts to reschedule User A's task -> 404
+        res_resched = self.client_b.post(
+            reverse('task_reschedule', args=[self.task_a.id]),
+            data=json.dumps({'new_due_date': '2026-12-01T12:00:00Z'}),
+            content_type='application/json'
+        )
+        self.assertEqual(res_resched.status_code, 404)
+
+    def test_idor_subtask_and_category_endpoints(self):
+        # User B attempts to toggle User A's subtask -> 404
+        res_sub_toggle = self.client_b.post(reverse('subtask_toggle', args=[self.subtask_a.id]))
+        self.assertEqual(res_sub_toggle.status_code, 404)
+
+        # User B attempts to delete User A's subtask -> 404
+        res_sub_del = self.client_b.post(reverse('subtask_delete', args=[self.subtask_a.id]))
+        self.assertEqual(res_sub_del.status_code, 404)
+
+        # User B attempts to create subtask under User A's task -> 404
+        res_sub_create = self.client_b.post(reverse('subtask_create', args=[self.task_a.id]), {'title': 'Hacked'})
+        self.assertEqual(res_sub_create.status_code, 404)
+
+        # User B attempts to delete User A's category -> 404
+        res_cat_del = self.client_b.post(reverse('category_delete', args=[self.cat_a.id]))
+        self.assertEqual(res_cat_del.status_code, 404)
+
+    def test_prevent_assigning_other_users_category(self):
+        from .forms import TaskForm
+        # User B tries to submit a task with User A's category ID
+        form = TaskForm(
+            data={'title': 'User B Task', 'category': self.cat_a.id, 'priority': 'medium', 'status': 'pending'},
+            user=self.user_b
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('category', form.errors)
+
+    def test_category_form_input_sanitization(self):
+        from .forms import CategoryForm
+        # Invalid hex color rejected
+        form = CategoryForm(data={'name': 'Test', 'color': 'not-a-hex', 'icon': 'fa-tag'})
+        self.assertFalse(form.is_valid())
+        self.assertIn('color', form.errors)
+
+        # Invalid icon format rejected
+        form2 = CategoryForm(data={'name': 'Test', 'color': '#ff0000', 'icon': 'fa-tag; alert(1)'})
+        self.assertFalse(form2.is_valid())
+        self.assertIn('icon', form2.errors)
+
+        # Valid input accepted
+        form3 = CategoryForm(data={'name': 'Valid Cat', 'color': '#8b5cf6', 'icon': 'fa-check'})
+        self.assertTrue(form3.is_valid())
+

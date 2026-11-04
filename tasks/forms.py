@@ -1,3 +1,4 @@
+import re
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
@@ -47,6 +48,7 @@ class TaskForm(forms.ModelForm):
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = user
         if user:
             self.fields['category'].queryset = Category.objects.filter(user=user)
 
@@ -54,10 +56,21 @@ class TaskForm(forms.ModelForm):
         if self.instance.pk and self.instance.tags:
             self.fields['tags_input'].initial = ', '.join(self.instance.tags)
 
+    def clean_category(self):
+        category = self.cleaned_data.get('category')
+        if category and self.user and category.user != self.user:
+            raise forms.ValidationError("You do not have permission to select this category.")
+        return category
+
     def clean_tags_input(self):
         tags_str = self.cleaned_data.get('tags_input', '')
         if tags_str:
-            return [tag.strip() for tag in tags_str.split(',') if tag.strip()]
+            cleaned_tags = []
+            for tag in tags_str.split(','):
+                t = tag.strip()[:50]
+                if t and t not in cleaned_tags:
+                    cleaned_tags.append(t)
+            return cleaned_tags[:20]
         return []
 
     def clean_reminder_at(self):
@@ -93,6 +106,12 @@ class SubTaskForm(forms.ModelForm):
             'title': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Subtask title'}),
         }
 
+    def clean_title(self):
+        title = self.cleaned_data.get('title', '').strip()
+        if not title:
+            raise forms.ValidationError("Subtask title cannot be empty.")
+        return title[:200]
+
 
 class CategoryForm(forms.ModelForm):
     class Meta:
@@ -103,6 +122,24 @@ class CategoryForm(forms.ModelForm):
             'color': forms.TextInput(attrs={'type': 'color', 'class': 'form-color'}),
             'icon': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'fa-icon-name'}),
         }
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name', '').strip()
+        if not name:
+            raise forms.ValidationError("Category name cannot be empty.")
+        return name[:50]
+
+    def clean_color(self):
+        color = self.cleaned_data.get('color', '#8b5cf6').strip()
+        if not re.match(r'^#[0-9a-fA-F]{6}$', color):
+            raise forms.ValidationError("Enter a valid hex color code (e.g. #8b5cf6).")
+        return color
+
+    def clean_icon(self):
+        icon = self.cleaned_data.get('icon', 'fa-tag').strip()
+        if not re.match(r'^[a-zA-Z0-9_-]+$', icon):
+            raise forms.ValidationError("Icon can only contain letters, numbers, hyphens, and underscores.")
+        return icon[:30]
 
 
 class ReminderForm(forms.ModelForm):
@@ -128,3 +165,9 @@ class SignUpForm(UserCreationForm):
             self.fields['password1'].widget.attrs.update({'class': 'form-input', 'placeholder': 'Password'})
         if 'password2' in self.fields:
             self.fields['password2'].widget.attrs.update({'class': 'form-input', 'placeholder': 'Confirm Password'})
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("An account with this email address already exists.")
+        return email

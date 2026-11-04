@@ -110,9 +110,12 @@
               <a href="{% url 'password_change' %}" style="font-size: 0.75rem; color: var(--purple-light);">Settings</a>
             </div>
           </div>
-          <a href="{% url 'logout' %}" class="logout-btn" title="Logout">
-            <i class="fas fa-sign-out-alt"></i>
-          </a>
+          <form method="post" action="{% url 'logout' %}" style="margin: 0; display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn" title="Logout" style="background: none; border: none; cursor: pointer; color: inherit; padding: 8px;">
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
+          </form>
         </div>
       </aside>
 
