@@ -7,57 +7,63 @@
 {% block content %}
 <div class="dashboard">
 
-  <!-- AI Personality: Nova -->
-  <div class="glass-card" style="border: 1px solid var(--purple); margin-bottom: 24px; position: relative; overflow: hidden;">
-    <div style="position: absolute; top: -20px; right: -20px; font-size: 6rem; opacity: 0.05; color: var(--purple);">
-      <i class="fas fa-robot"></i>
-    </div>
-    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-      <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--purple), var(--purple-dark)); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);">
-        🤖
+  <!-- AI Intelligence Copilot: Nova -->
+  <div class="glass-card ai-copilot-card">
+    <div class="ai-card-header">
+      <div class="ai-avatar">
+        <i class="fas fa-sparkles"></i>
       </div>
-      <div>
-        <h3 style="font-size: 1.1rem; color: var(--purple-light);">{{ ai_greeting.name }}</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">{{ ai_greeting.greeting }}</p>
+      <div class="ai-header-info">
+        <div class="ai-title-row">
+          <h3 class="ai-name">{{ ai_greeting.name }}</h3>
+          <span class="badge-pill badge-ai"><span class="pulse-dot"></span> Copilot Active</span>
+        </div>
+        <p class="ai-sub">{{ ai_greeting.greeting }}</p>
       </div>
       {% if ai_greeting.streak_msg %}
-      <span style="margin-left: auto; background: linear-gradient(135deg, #f59e0b, #ef4444); padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">{{ ai_greeting.streak_msg }}</span>
+      <span class="badge-streak"><i class="fas fa-fire"></i> {{ ai_greeting.streak_msg }}</span>
       {% endif %}
     </div>
-    <p style="font-size: 1rem; margin-bottom: 16px; padding: 12px; background: rgba(139, 92, 246, 0.05); border-radius: 10px; border-left: 3px solid var(--purple);">
-      "{{ ai_greeting.encouragement }}"
-    </p>
+
+    <div class="ai-quote">
+      <i class="fas fa-quote-left quote-mark"></i>
+      <span>{{ ai_greeting.encouragement }}</span>
+    </div>
+
     {% if procrastination_alert %}
-    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(239, 68, 68, 0.08); border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 12px;">
-      <i class="fas fa-exclamation-circle" style="color: var(--red); font-size: 1.2rem;"></i>
-      <div style="flex: 1;">
-        <p style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 4px;"><strong>{{ procrastination_alert.roast }}</strong></p>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">{{ procrastination_alert.suggestion }}</p>
+    <div class="ai-alert-banner">
+      <i class="fas fa-triangle-exclamation"></i>
+      <div class="ai-alert-content">
+        <p class="ai-alert-title">{{ procrastination_alert.roast }}</p>
+        <p class="ai-alert-sub">{{ procrastination_alert.suggestion }}</p>
       </div>
     </div>
     {% endif %}
+
     {% if schedule_tip %}
-    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(16, 185, 129, 0.08); border-radius: 10px;">
-      <i class="fas fa-brain" style="color: var(--green);"></i>
-      <span style="font-size: 0.9rem; color: var(--text-secondary);">{{ schedule_tip }}</span>
+    <div class="ai-tip-banner">
+      <i class="fas fa-lightbulb"></i>
+      <span>{{ schedule_tip }}</span>
     </div>
     {% endif %}
   </div>
 
-  <!-- Gamification Bar -->
-  <div class="glass-card" style="margin-bottom: 24px;">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="font-size: 1.3rem;">🏆</span>
+  <!-- Gamification / Mastery Bar -->
+  <div class="glass-card mastery-card">
+    <div class="mastery-header">
+      <div class="mastery-badge">
+        <div class="mastery-icon">
+          <i class="fas fa-award"></i>
+        </div>
         <div>
-          <h4 style="font-size: 1rem;">Level {{ gamification.level }} — {{ gamification.title }}</h4>
-          <p style="font-size: 0.8rem; color: var(--text-muted);">{{ gamification.completed_count }} tasks completed • {{ gamification.xp }} XP</p>
+          <h4 class="mastery-title">Level {{ gamification.level }} &mdash; {{ gamification.title }}</h4>
+          <p class="mastery-sub">{{ gamification.completed_count }} tasks completed &bull; {{ gamification.xp }} XP</p>
         </div>
       </div>
-      <span style="font-size: 0.85rem; color: var(--purple-light); font-weight: 700;">{{ gamification.progress }}/100 XP</span>
+      <span class="mastery-xp">{{ gamification.progress }} / 100 XP</span>
     </div>
-    <div style="height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden;">
-      <div style="height: 100%; width: {{ gamification.progress }}%; background: linear-gradient(90deg, var(--purple), var(--purple-light)); border-radius: 4px; transition: width 0.5s;"></div>
+    <div class="progress-track">
+      <div class="progress-fill" style="width: {{ gamification.progress }}%;"></div>
     </div>
   </div>
 

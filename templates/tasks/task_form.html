@@ -5,41 +5,30 @@
 {% block content %}
 <div class="form-page">
   <div class="glass-card form-card">
-    <!-- SMART CREATE: Separate mini-form -->
-    <div
-      class="glass-card"
-      style="margin-bottom: 24px; border: 1px solid var(--purple)"
-    >
-      <div
-        style="
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: 16px;
-        "
-      >
-        <i
-          class="fas fa-wand-magic-sparkles"
-          style="color: var(--purple-light); font-size: 1.2rem"
-        ></i>
-        <h3 style="color: var(--purple-light)">Smart Create with AI</h3>
+    <!-- SMART CREATE: AI Prompt Bar -->
+    <div class="smart-create-card">
+      <div class="smart-create-header">
+        <div class="smart-create-badge">
+          <i class="fas fa-wand-magic-sparkles"></i>
+          <span>Smart Create</span>
+        </div>
+        <span class="smart-create-hint">Powered by Gemini AI</span>
       </div>
-      <form method="post" class="nl-form">
+      <form method="post" class="nl-form smart-create-form">
         {% csrf_token %}
-        <div class="input-with-icon">
-          <i class="fas fa-keyboard"></i>
+        <div class="smart-input-wrapper">
+          <i class="fas fa-sparkles smart-icon"></i>
           <input
             type="text"
             name="natural_language"
-            class="form-input"
-            placeholder="e.g. 'Finish project report by Friday 5pm urgent'"
+            class="form-input smart-input"
+            placeholder="Describe your task naturally (e.g., 'Deploy v2 release to staging by Friday 4pm #urgent')"
             value="{{ natural_language|default:'' }}"
-            style="width: 100%"
           />
+          <button type="submit" class="btn btn-primary btn-smart-submit">
+            <i class="fas fa-bolt"></i> Parse
+          </button>
         </div>
-        <button type="submit" class="btn btn-primary" style="margin-top: 12px">
-          <i class="fas fa-bolt"></i> Parse with AI
-        </button>
       </form>
     </div>
 
@@ -101,7 +90,7 @@
       </div>
 
       <!-- Recurrence Controls -->
-      <div class="form-row two-col" style="background: rgba(139, 92, 246, 0.05); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.2); margin-bottom: 20px;">
+      <div class="form-row two-col form-recurrence-row">
         <div class="form-group checkbox-group" style="margin-bottom: 0;">
           <label class="checkbox-label">
             {{ form.is_recurring }}
@@ -134,44 +123,13 @@
 
       <!-- AI SUBTASKS: INSIDE the main form -->
       {% if subtask_suggestions %}
-      <div
-        class="subtasks-section"
-        style="
-          border-top: 1px solid var(--border);
-          padding-top: 20px;
-          margin-top: 20px;
-        "
-      >
-        <h4
-          style="
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 14px;
-            font-size: 1rem;
-          "
-        >
-          <i class="fas fa-robot" style="color: var(--purple-light)"></i> AI
-          Suggested Subtasks
+      <div class="subtasks-section ai-subtasks-container">
+        <h4 class="ai-subtasks-title">
+          <i class="fas fa-sparkles"></i> AI Suggested Breakdown
         </h4>
-        <div
-          style="
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 14px;
-          "
-        >
+        <div class="ai-subtasks-list">
           {% for sub in subtask_suggestions %}
-          <label
-            class="checkbox-label"
-            style="
-              padding: 10px 14px;
-              background: rgba(139, 92, 246, 0.05);
-              border-radius: 8px;
-              border: 1px solid var(--border);
-            "
-          >
+          <label class="checkbox-label ai-subtask-item">
             <input
               type="checkbox"
               name="ai_subtasks"
@@ -180,7 +138,7 @@
               class="form-checkbox"
               onchange="updateSubtasksJson()"
             />
-            <span class="label-text" style="font-size: 0.95rem">{{ sub }}</span>
+            <span class="label-text">{{ sub }}</span>
           </label>
           {% endfor %}
         </div>
