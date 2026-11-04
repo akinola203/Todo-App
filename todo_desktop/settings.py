@@ -10,22 +10,37 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-taskflow-dev-secret-key-change-in-prod')
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 't')
 
-allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
-ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
-if DEBUG and not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', '')
+parsed_hosts = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
+
+default_hosts = [
+    'localhost',
+    '127.0.0.1',
+    'healthcheck.railway.app',
+    '.railway.app',
+    '.up.railway.app',
+    '.onrender.com',
+]
+
+railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+if railway_domain:
+    default_hosts.append(railway_domain.strip())
+
+ALLOWED_HOSTS = list(set(default_hosts + parsed_hosts))
 
 csrf_trusted_env = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
 if csrf_trusted_env:
     CSRF_TRUSTED_ORIGINS = [o.strip() for o in csrf_trusted_env.split(',') if o.strip()]
 else:
-    CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
-    for host in ALLOWED_HOSTS:
-        if host not in ['localhost', '127.0.0.1', '*']:
-            if host.startswith('.'):
-                CSRF_TRUSTED_ORIGINS.append(f"https://*{host}")
-            else:
-                CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'https://*.railway.app',
+        'https://*.up.railway.app',
+        'https://*.onrender.com',
+    ]
+    if railway_domain:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{railway_domain}")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
