@@ -1,5 +1,5 @@
 import json
-from datetime import timedelta
+from datetime import timedelta, date
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -304,4 +304,193 @@ class SecurityAuditTests(TestCase):
         # Valid input accepted
         form3 = CategoryForm(data={'name': 'Valid Cat', 'color': '#8b5cf6', 'icon': 'fa-check'})
         self.assertTrue(form3.is_valid())
+
+
+class TaskSecurityTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        
+        # Create two distinct users to test multi-tenant data isolation
+        self.victim = User.objects.create_user(username='victim', password='StrongPassword123!')
+        self.attacker = User.objects.create_user(username='attacker', password='StrongPassword123!')
+
+        # Create victim's private resources
+        self.victim_category = Category.objects.create(
+            user=self.victim, 
+            name='Confidential Project', 
+            color='#dc2626'
+        )
+        self.victim_task = Task.objects.create(
+            user=self.victim,
+            title='Acquire Competitor',
+            priority='urgent',
+            status='pending',
+            category=self.victim_category,
+            due_date=date(2026, 12, 31)
+        )
+        self.victim_subtask = SubTask.objects.create(
+            task=self.victim_task,
+            title='Draft acquisition terms',
+            is_completed=False
+        )
+
+    def test_unauthenticated_access_blocked(self):
+        """Ensure anonymous requests to pages and APIs redirect to login."""
+        protected_urls = [
+            reverse('dashboard'),
+            reverse('task_list'),
+            reverse('calendar_view'),
+            reverse('calendar_events_api'),
+            reverse('export_tasks_ics'),
+            reverse('task_update', args=[self.victim_task.id]),
+        ]
+        for url in protected_urls:
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 302, f"Unprotected GET route: {url}")
+            self.assertIn('/login/', response.url)
+
+    def test_idor_task_detail_and_update_isolation(self):
+        """Attacker cannot view or edit Victim's task via direct URL."""
+        self.client.login(username='attacker', password='StrongPassword123!')
+        
+        update_url = reverse('task_update', args=[self.victim_task.id])
+        
+        # Attempt GET
+        get_res = self.client.get(update_url)
+        self.assertEqual(get_res.status_code, 404)
+
+        # Attempt POST overwrite
+        post_res = self.client.post(update_url, {
+            'title': 'Pwned Task',
+            'priority': 'low',
+            'status': 'completed'
+        })
+        self.assertEqual(post_res.status_code, 404)
+        
+        self.victim_task.refresh_from_db()
+        self.assertEqual(self.victim_task.title, 'Acquire Competitor')
+
+    def test_idor_ajax_task_toggle_and_reschedule_isolation(self):
+        """Attacker cannot toggle status or reschedule Victim's task via AJAX."""
+        self.client.login(username='attacker', password='StrongPassword123!')
+
+        # 1. Test Task Toggle
+        toggle_url = reverse('task_toggle', args=[self.victim_task.id])
+        toggle_res = self.client.post(toggle_url, content_type='application/json')
+        self.assertIn(toggle_res.status_code, [403, 404])
+        
+        self.victim_task.refresh_from_db()
+        self.assertEqual(self.victim_task.status, 'pending')
+
+        # 2. Test Calendar Drag-and-Drop Reschedule
+        reschedule_url = reverse('task_reschedule_api', args=[self.victim_task.id])
+        reschedule_res = self.client.post(
+            reschedule_url,
+            data=json.dumps({'due_date': '2027-05-01'}),
+            content_type='application/json'
+        )
+        self.assertIn(reschedule_res.status_code, [400, 403, 404])
+        
+        self.victim_task.refresh_from_db()
+        self.assertEqual(self.victim_task.due_date, date(2026, 12, 31))
+
+    def test_idor_subtask_manipulation_isolation(self):
+        """Attacker cannot create, toggle, or delete subtasks on Victim's task."""
+        self.client.login(username='attacker', password='StrongPassword123!')
+
+        # 1. Inject subtask into Victim's task
+        create_url = reverse('subtask_create', args=[self.victim_task.id])
+        create_res = self.client.post(
+            create_url,
+            data=json.dumps({'title': 'Injected Subtask'}),
+            content_type='application/json'
+        )
+        self.assertIn(create_res.status_code, [403, 404])
+        self.assertEqual(self.victim_task.subtasks.count(), 1)
+
+        # 2. Toggle Victim's subtask
+        toggle_url = reverse('subtask_toggle', args=[self.victim_subtask.id])
+        toggle_res = self.client.post(toggle_url, content_type='application/json')
+        self.assertIn(toggle_res.status_code, [403, 404])
+        self.victim_subtask.refresh_from_db()
+        self.assertFalse(self.victim_subtask.is_completed)
+
+        # 3. Delete Victim's subtask
+        delete_url = reverse('subtask_delete', args=[self.victim_subtask.id])
+        delete_res = self.client.post(delete_url, content_type='application/json')
+        self.assertIn(delete_res.status_code, [403, 404])
+        self.assertTrue(SubTask.objects.filter(id=self.victim_subtask.id).exists())
+
+    def test_foreign_category_assignment_prevented(self):
+        """Attacker cannot bind a new task to Victim's private Category ID."""
+        self.client.login(username='attacker', password='StrongPassword123!')
+        
+        create_url = reverse('task_create')
+        self.client.post(create_url, {
+            'title': 'Attacker Task',
+            'priority': 'medium',
+            'status': 'pending',
+            'category': self.victim_category.id  # Attempting foreign key injection
+        })
+        
+        # Form validation should reject the foreign category ID
+        attacker_task = Task.objects.filter(user=self.attacker, title='Attacker Task').first()
+        if attacker_task:
+            self.assertNotEqual(attacker_task.category, self.victim_category)
+
+    def test_calendar_and_ical_feed_data_leakage(self):
+        """Calendar JSON feed and .ics export must never leak another user's tasks."""
+        self.client.login(username='attacker', password='StrongPassword123!')
+
+        # Check FullCalendar JSON API
+        cal_res = self.client.get(reverse('calendar_events_api'))
+        self.assertEqual(cal_res.status_code, 200)
+        events = json.loads(cal_res.content)
+        self.assertEqual(len(events), 0)
+
+        # Check iCal .ics file download
+        ics_res = self.client.get(reverse('export_tasks_ics'))
+        self.assertEqual(ics_res.status_code, 200)
+        self.assertNotIn(b'Acquire Competitor', ics_res.content)
+
+    def test_csrf_enforcement_on_mutating_endpoints(self):
+        """Ensure POST endpoints reject requests missing a valid CSRF token."""
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.login(username='victim', password='StrongPassword123!')
+
+        toggle_url = reverse('task_toggle', args=[self.victim_task.id])
+        res = csrf_client.post(toggle_url, content_type='application/json')
+        self.assertEqual(res.status_code, 403)
+
+
+class RateLimitingSecurityTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.client = Client()
+        self.user = User.objects.create_user(username='ratelimituser', password='StrongPassword123!')
+
+    def test_login_brute_force_rate_limit(self):
+        """Repeated failed logins trigger 429 Too Many Requests."""
+        login_url = reverse('login')
+        for i in range(5):
+            res = self.client.post(login_url, {'username': 'wronguser', 'password': 'wrongpassword'})
+            self.assertIn(res.status_code, [200, 302])
+
+        # 6th attempt should trigger rate limiting (429)
+        blocked_res = self.client.post(login_url, {'username': 'wronguser', 'password': 'wrongpassword'})
+        self.assertEqual(blocked_res.status_code, 429)
+        self.assertIn('Retry-After', blocked_res)
+
+    def test_ai_endpoint_rate_limit(self):
+        """Rapid AI parse requests trigger rate limiting (429)."""
+        self.client.login(username='ratelimituser', password='StrongPassword123!')
+        create_url = reverse('task_create')
+
+        for i in range(10):
+            self.client.post(create_url, {'natural_language': f'Task {i} tomorrow urgent'})
+
+        # 11th AI attempt should be rate limited with 429
+        blocked_res = self.client.post(create_url, {'natural_language': 'Over quota task'})
+        self.assertEqual(blocked_res.status_code, 429)
 

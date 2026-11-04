@@ -10,9 +10,11 @@ from django.utils import timezone
 from django.db.models import Count, Q, Avg, F
 from django.conf import settings
 from django.views.decorators.http import require_POST
+from django.contrib.auth import views as auth_views
 
 from .models import Task, SubTask, Category, Reminder, DailyAnalytics, PushSubscription
 from .forms import TaskForm, SubTaskForm, CategoryForm, ReminderForm, SignUpForm
+from .ratelimit import get_client_ip, check_rate_limit
 from .ai_utils import (
     parse_natural_language_task, 
     generate_subtasks,
@@ -23,6 +25,24 @@ from .ai_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class RateLimitedLoginView(auth_views.LoginView):
+    template_name = 'registration/login.html'
+
+    def post(self, request, *args, **kwargs):
+        ip = get_client_ip(request)
+        rate_key = f"ratelimit:login:{ip}"
+        # 5 login attempts per 60 seconds per IP
+        allowed, remaining, retry_after = check_rate_limit(rate_key, limit=5, window=60)
+        if not allowed:
+            form = self.get_form()
+            form.add_error(None, f"Too many login attempts. Please wait {retry_after} seconds before trying again.")
+            response = self.render_to_response(self.get_context_data(form=form))
+            response.status_code = 429
+            response['Retry-After'] = str(retry_after)
+            return response
+        return super().post(request, *args, **kwargs)
 
 
 def signup(request):
@@ -140,6 +160,17 @@ def task_create(request):
         # SMART CREATE (AI parser request)
         nl_input = request.POST.get('natural_language', '').strip()
         if nl_input:
+            ai_rate_key = f"ratelimit:ai:{request.user.id}"
+            allowed, remaining, retry_after = check_rate_limit(ai_rate_key, limit=10, window=60)
+            if not allowed:
+                form = TaskForm(user=request.user)
+                messages.error(request, f"AI rate limit reached. Please wait {retry_after} seconds before requesting AI parsing again.")
+                return render(request, 'tasks/task_form.html', {
+                    'form': form,
+                    'action': 'Create',
+                    'subtask_suggestions': []
+                }, status=429)
+
             parsed = parse_natural_language_task(nl_input)
             initial = {
                 'title': parsed.get('title', nl_input),
@@ -527,12 +558,17 @@ def task_reschedule(request, pk):
     task = get_object_or_404(Task, pk=pk, user=request.user)
     try:
         data = json.loads(request.body)
-        new_due_str = data.get('new_due_date')
+        new_due_str = data.get('new_due_date') or data.get('due_date')
         if not new_due_str:
             return JsonResponse({'error': 'New due date required'}, status=400)
 
-        from django.utils.dateparse import parse_datetime
-        new_due = parse_datetime(new_due_str)
+        from django.utils.dateparse import parse_datetime, parse_date
+        new_due = parse_datetime(str(new_due_str))
+        if not new_due:
+            parsed_d = parse_date(str(new_due_str))
+            if parsed_d:
+                new_due = timezone.make_aware(datetime.combine(parsed_d, datetime.min.time()))
+
         if not new_due:
             return JsonResponse({'error': 'Invalid date format'}, status=400)
 

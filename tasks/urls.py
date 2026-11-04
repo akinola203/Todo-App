@@ -10,6 +10,7 @@ urlpatterns = [
     path('tasks/<int:pk>/toggle/', views.task_toggle, name='task_toggle'),
     path('tasks/<int:pk>/archive/', views.task_archive, name='task_archive'),
     path('tasks/<int:pk>/reschedule/', views.task_reschedule, name='task_reschedule'),
+    path('api/tasks/<int:pk>/reschedule/', views.task_reschedule, name='task_reschedule_api'),
     path('tasks/archived/', views.archived_tasks, name='archived_tasks'),
     path('tasks/export/ics/', views.export_tasks_ics, name='export_tasks_ics'),
 

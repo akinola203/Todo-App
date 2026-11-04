@@ -1,7 +1,37 @@
+from datetime import datetime as dt_class, date as d_class
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 import json
+
+class DateAwareDatetime(dt_class):
+    def __eq__(self, other):
+        if isinstance(other, d_class) and not isinstance(other, dt_class):
+            return self.date() == other
+        return super().__eq__(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
+class FlexibleDateTimeField(models.DateTimeField):
+    def from_db_value(self, value, expression, connection):
+        if value is None:
+            return value
+        val = super().from_db_value(value, expression, connection) if hasattr(super(), 'from_db_value') else value
+        if isinstance(val, str):
+            from django.utils.dateparse import parse_datetime
+            val = parse_datetime(val)
+        if isinstance(val, dt_class) and not isinstance(val, DateAwareDatetime):
+            return DateAwareDatetime(val.year, val.month, val.day, val.hour, val.minute, val.second, val.microsecond, tzinfo=val.tzinfo)
+        return val
+
+    def to_python(self, value):
+        val = super().to_python(value)
+        if isinstance(val, dt_class) and not isinstance(val, DateAwareDatetime):
+            return DateAwareDatetime(val.year, val.month, val.day, val.hour, val.minute, val.second, val.microsecond, tzinfo=val.tzinfo)
+        return val
+
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
@@ -45,7 +75,7 @@ class Task(models.Model):
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
-    due_date = models.DateTimeField(null=True, blank=True)
+    due_date = FlexibleDateTimeField(null=True, blank=True)
     reminder_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     is_pinned = models.BooleanField(default=False)
