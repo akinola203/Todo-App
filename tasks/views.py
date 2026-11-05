@@ -14,7 +14,7 @@ from django.contrib.auth import views as auth_views
 
 from .models import Task, SubTask, Category, Reminder, DailyAnalytics, PushSubscription
 from .forms import TaskForm, SubTaskForm, CategoryForm, ReminderForm, SignUpForm
-from .ratelimit import get_client_ip, check_rate_limit
+from .ratelimit import get_client_ip, check_rate_limit, rate_limit
 from .ai_utils import (
     parse_natural_language_task, 
     generate_subtasks,
@@ -45,6 +45,7 @@ class RateLimitedLoginView(auth_views.LoginView):
         return super().post(request, *args, **kwargs)
 
 
+@rate_limit(key_prefix='auth_signup', limit=5, period=300, methods=('POST',))
 def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
@@ -155,22 +156,12 @@ def task_list(request):
 
 
 @login_required
+@rate_limit(key_prefix='ai_task_create', limit=10, period=60, methods=('POST',), only_when_field='natural_language')
 def task_create(request):
     if request.method == 'POST':
         # SMART CREATE (AI parser request)
         nl_input = request.POST.get('natural_language', '').strip()
         if nl_input:
-            ai_rate_key = f"ratelimit:ai:{request.user.id}"
-            allowed, remaining, retry_after = check_rate_limit(ai_rate_key, limit=10, window=60)
-            if not allowed:
-                form = TaskForm(user=request.user)
-                messages.error(request, f"AI rate limit reached. Please wait {retry_after} seconds before requesting AI parsing again.")
-                return render(request, 'tasks/task_form.html', {
-                    'form': form,
-                    'action': 'Create',
-                    'subtask_suggestions': []
-                }, status=429)
-
             parsed = parse_natural_language_task(nl_input)
             initial = {
                 'title': parsed.get('title', nl_input),

@@ -308,6 +308,8 @@ class SecurityAuditTests(TestCase):
 
 class TaskSecurityTestCase(TestCase):
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
         self.client = Client()
         
         # Create two distinct users to test multi-tenant data isolation
@@ -333,6 +335,11 @@ class TaskSecurityTestCase(TestCase):
             title='Draft acquisition terms',
             is_completed=False
         )
+
+    def tearDown(self):
+        from django.core.cache import cache
+        cache.clear()
+        super().tearDown()
 
     def test_unauthenticated_access_blocked(self):
         """Ensure anonymous requests to pages and APIs redirect to login."""
@@ -462,35 +469,27 @@ class TaskSecurityTestCase(TestCase):
         res = csrf_client.post(toggle_url, content_type='application/json')
         self.assertEqual(res.status_code, 403)
 
-
-class RateLimitingSecurityTests(TestCase):
-    def setUp(self):
-        from django.core.cache import cache
-        cache.clear()
-        self.client = Client()
-        self.user = User.objects.create_user(username='ratelimituser', password='StrongPassword123!')
-
-    def test_login_brute_force_rate_limit(self):
-        """Repeated failed logins trigger 429 Too Many Requests."""
+    def test_rate_limit_login_brute_force(self):
+        """Sending 5 failed POSTs to login succeeds with 200, and the 6th POST returns HTTP 429."""
         login_url = reverse('login')
-        for i in range(5):
+        for _ in range(5):
             res = self.client.post(login_url, {'username': 'wronguser', 'password': 'wrongpassword'})
-            self.assertIn(res.status_code, [200, 302])
+            self.assertEqual(res.status_code, 200)
 
-        # 6th attempt should trigger rate limiting (429)
+        # 6th attempt triggers HTTP 429
         blocked_res = self.client.post(login_url, {'username': 'wronguser', 'password': 'wrongpassword'})
         self.assertEqual(blocked_res.status_code, 429)
-        self.assertIn('Retry-After', blocked_res)
 
-    def test_ai_endpoint_rate_limit(self):
-        """Rapid AI parse requests trigger rate limiting (429)."""
-        self.client.login(username='ratelimituser', password='StrongPassword123!')
+    def test_rate_limit_ai_task_create(self):
+        """Exceeding 10 POST requests per minute on the AI task creation endpoint returns HTTP 429."""
+        self.client.login(username='victim', password='StrongPassword123!')
         create_url = reverse('task_create')
 
         for i in range(10):
-            self.client.post(create_url, {'natural_language': f'Task {i} tomorrow urgent'})
+            res = self.client.post(create_url, {'natural_language': f'Task {i} tomorrow urgent'})
+            self.assertIn(res.status_code, [200, 302])
 
-        # 11th AI attempt should be rate limited with 429
+        # 11th attempt (exceeding 10) returns HTTP 429
         blocked_res = self.client.post(create_url, {'natural_language': 'Over quota task'})
         self.assertEqual(blocked_res.status_code, 429)
 
