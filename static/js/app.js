@@ -144,6 +144,38 @@ function toggleDropdown(btn) {
     });
 }
 
+// Toggle subtask status (AJAX)
+function toggleSubtaskStatus(checkbox, subtaskId) {
+    const csrftoken = getCookie('csrftoken');
+    const row = checkbox.closest('.subtask-row') || checkbox.closest('.subtask-item');
+
+    fetch(`/subtasks/${subtaskId}/toggle/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Subtask toggle failed');
+        return response.json();
+    })
+    .then(data => {
+        if (row) {
+            if (data.is_completed) {
+                row.classList.add('completed-row');
+            } else {
+                row.classList.remove('completed-row');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling subtask:', error);
+        checkbox.checked = !checkbox.checked;
+    });
+}
+
 // Add subtask (AJAX)
 function addSubtask(taskId) {
     const input = document.getElementById('newSubtaskInput');
@@ -169,16 +201,26 @@ function addSubtask(taskId) {
     .then(data => {
         if (data.id) {
             const list = document.getElementById('subtasksList');
-            const item = document.createElement('div');
-            item.className = 'subtask-item';
-            item.dataset.id = data.id;
-            item.innerHTML = `
-                <span class="subtask-title">${escapeHtml(data.title)}</span>
-                <button type="button" class="btn-icon" onclick="deleteSubtask(${data.id})">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            list.appendChild(item);
+            if (list) {
+                const item = document.createElement('div');
+                item.className = 'subtask-row';
+                item.dataset.id = data.id;
+                item.innerHTML = `
+                    <span class="drag-handle-grip"><i class="fas fa-grip-vertical"></i></span>
+                    <label class="shakuro-circular-checkbox">
+                        <input type="checkbox" onchange="toggleSubtaskStatus(this, ${data.id})">
+                        <span class="circle-check-indicator"></span>
+                    </label>
+                    <div class="subtask-details">
+                        <span class="subtask-text">${escapeHtml(data.title)}</span>
+                        <span class="subtask-parent-ref">Recently added</span>
+                    </div>
+                    <button type="button" class="btn-subtask-del" onclick="deleteSubtask(${data.id})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                list.prepend(item);
+            }
             input.value = '';
         }
     })
@@ -203,7 +245,7 @@ function deleteSubtask(subtaskId) {
     })
     .then(data => {
         if (data.success) {
-            const item = document.querySelector(`.subtask-item[data-id="${subtaskId}"]`);
+            const item = document.querySelector(`.subtask-row[data-id="${subtaskId}"], .subtask-item[data-id="${subtaskId}"]`);
             if (item) {
                 item.style.opacity = '0';
                 item.style.transform = 'translateX(-20px)';

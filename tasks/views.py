@@ -74,6 +74,11 @@ def dashboard(request):
     ).count()
     completion_rate = round((completed / total * 100), 1) if total > 0 else 0
 
+    # Urgent & High completion stats for concentric ring chart
+    urgent_total = Task.objects.filter(user=user, priority__in=['urgent', 'high']).count()
+    urgent_completed = Task.objects.filter(user=user, priority__in=['urgent', 'high'], status='completed').count()
+    urgent_rate = round((urgent_completed / urgent_total * 100), 1) if urgent_total > 0 else 75
+
     recent_tasks = (
         Task.objects.filter(user=user)
         .select_related('category')
@@ -84,6 +89,42 @@ def dashboard(request):
         .select_related('category')
         .order_by('due_date')[:5]
     )
+
+    # Categories annotated with task counts for Column 1
+    categories = Category.objects.filter(user=user).annotate(task_count=Count('tasks'))
+
+    # Subtasks for interactive subtask card in Column 2
+    subtasks = SubTask.objects.filter(
+        task__user=user, 
+        task__status__in=['pending', 'in_progress']
+    ).select_related('task')[:6]
+
+    # Imminent reminder / task for Column 3
+    imminent_task = (
+        Task.objects.filter(user=user, status__in=['pending', 'in_progress'], due_date__gte=now)
+        .select_related('category')
+        .order_by('due_date')
+        .first()
+    )
+    if not imminent_task:
+        imminent_task = Task.objects.filter(user=user).select_related('category').order_by('-created_at').first()
+
+    # 5-day horizontal selector strip
+    date_strip = []
+    for i in range(5):
+        d = now + timedelta(days=i)
+        date_strip.append({
+            'day_name': d.strftime('%a'),
+            'day_num': d.strftime('%d'),
+            'date_str': d.strftime('%Y-%m-%d'),
+            'is_active': (i == 0)
+        })
+
+    # Top dual highlight tasks for Column 2
+    highlight_tasks = list(urgent_tasks[:2])
+    if len(highlight_tasks) < 2:
+        extra_tasks = list(Task.objects.filter(user=user).exclude(id__in=[t.id for t in highlight_tasks])[:2 - len(highlight_tasks)])
+        highlight_tasks.extend(extra_tasks)
 
     ai_greeting = get_ai_greeting(user)
     procrastination_alert = get_procrastination_alert(user)
@@ -96,10 +137,17 @@ def dashboard(request):
             'pending': pending,
             'completed': completed,
             'overdue': overdue,
-            'completion_rate': completion_rate
+            'completion_rate': completion_rate,
+            'urgent_rate': urgent_rate,
+            'sprint_rate': min(100, int(completion_rate * 1.15)) if completion_rate > 0 else 64,
         },
         'recent_tasks': recent_tasks,
         'urgent_tasks': urgent_tasks,
+        'highlight_tasks': highlight_tasks,
+        'categories': categories,
+        'subtasks': subtasks,
+        'imminent_task': imminent_task,
+        'date_strip': date_strip,
         'ai_greeting': ai_greeting,
         'procrastination_alert': procrastination_alert,
         'schedule_tip': schedule_tip,

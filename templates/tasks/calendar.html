@@ -7,12 +7,12 @@
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
 <style>
-  .calendar-container {
-    background: var(--bg-surface, #121215);
-    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-    border-radius: 14px;
+  .calendar-container-matte {
+    background: #22232a;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 18px;
     padding: 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
   }
   .calendar-header-actions {
     display: flex;
@@ -20,101 +20,110 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 16px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
   }
   .fc {
-    color: #f4f4f5;
+    color: #ffffff;
     font-family: inherit;
   }
   .fc-theme-standard td, .fc-theme-standard th {
-    border-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.05);
   }
   .fc-theme-standard .fc-scrollgrid {
-    border-color: rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
+    border-color: rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
     overflow: hidden;
   }
   .fc-col-header-cell {
     background: rgba(255, 255, 255, 0.02);
-    padding: 10px 0;
+    padding: 12px 0;
     font-weight: 600;
     font-size: 0.85rem;
-    color: var(--text-secondary, #a1a1aa);
+    color: #7c7f90;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
   .fc-daygrid-day-number {
-    color: #a1a1aa;
-    font-size: 0.85rem;
-    padding: 6px 10px;
+    color: #7c7f90;
+    font-size: 0.88rem;
+    padding: 8px 12px;
     font-weight: 500;
   }
   .fc-day-today {
-    background: rgba(99, 102, 241, 0.08) !important;
+    background: rgba(46, 111, 242, 0.08) !important;
+  }
+  .fc-day-today .fc-daygrid-day-number {
+    color: #2e6ff2;
+    font-weight: 700;
   }
   .fc .fc-button-primary {
-    background-color: #18181c;
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #f4f4f5;
-    border-radius: 8px;
-    padding: 6px 14px;
-    font-weight: 500;
-    font-size: 0.85rem;
-    transition: all 0.15s ease;
+    background-color: #1e1f25;
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border-radius: 9999px;
+    padding: 6px 16px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease;
   }
   .fc .fc-button-primary:hover, .fc .fc-button-primary:focus {
-    background-color: #27272a;
-    border-color: rgba(255, 255, 255, 0.2);
+    background-color: #2b2c34;
+    border-color: rgba(255, 255, 255, 0.18);
     color: #ffffff;
     box-shadow: none;
   }
   .fc .fc-button-primary:disabled {
-    background-color: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.06);
-    color: #52525b;
+    background-color: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.04);
+    color: #4b4d58;
   }
   .fc .fc-button-active {
-    background-color: #6366f1 !important;
-    border-color: #6366f1 !important;
+    background-color: #2e6ff2 !important;
+    border-color: #2e6ff2 !important;
     color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(46, 111, 242, 0.35) !important;
   }
   .fc-event {
     cursor: grab;
-    border-radius: 6px;
-    padding: 3px 8px;
-    font-size: 0.8rem;
-    font-weight: 500;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
     border: none !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     transition: transform 0.15s ease, opacity 0.15s ease;
   }
   .fc-event:hover {
     transform: translateY(-1px);
-    opacity: 0.95;
+    opacity: 0.92;
   }
   .fc-toolbar-title {
-    font-size: 1.25rem !important;
+    font-size: 1.35rem !important;
     font-weight: 700;
     letter-spacing: -0.02em;
-    color: #f4f4f5;
+    color: #ffffff;
   }
-  .calendar-legend {
+  .calendar-legend-matte {
     display: flex;
-    gap: 16px;
+    gap: 18px;
     flex-wrap: wrap;
     align-items: center;
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     font-size: 0.85rem;
-    color: var(--text-muted, #71717a);
+    color: #7c7f90;
   }
   .legend-item {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
+    color: #b5b7c4;
   }
   .legend-dot {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
   }
 </style>
@@ -122,21 +131,23 @@
 
 {% block content %}
 <div class="calendar-page">
-  <div class="calendar-container">
+  <div class="calendar-container-matte">
     <div class="calendar-header-actions">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <i class="fas fa-calendar-alt" style="font-size: 1.5rem; color: var(--purple-light, #a78bfa);"></i>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="logo-icon" style="background: #2e6ff2; width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; color: #fff;">
+          <i class="fas fa-calendar-alt"></i>
+        </span>
         <div>
-          <h2 style="margin: 0; font-size: 1.3rem;">Schedule & Deadlines</h2>
-          <span style="font-size: 0.85rem; color: #94a3b8;">Drag and drop tasks to reschedule deadline</span>
+          <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #ffffff;">Schedule & Deadlines</h2>
+          <span style="font-size: 0.85rem; color: #7c7f90;">Drag and drop tasks across days to reschedule deadline</span>
         </div>
       </div>
-      <div style="display: flex; gap: 10px;">
-        <a href="{% url 'export_tasks_ics' %}" class="btn btn-ghost" title="Export as iCal feed for Google Calendar / Apple Calendar">
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <a href="{% url 'export_tasks_ics' %}" class="btn-shakuro-ics" title="Export as iCal feed for Google Calendar / Apple Calendar">
           <i class="fas fa-file-export"></i> Export .ics
         </a>
-        <a href="{% url 'task_create' %}" class="btn btn-primary">
-          <i class="fas fa-plus"></i> New Task
+        <a href="{% url 'task_create' %}" class="btn-shakuro-cobalt">
+          <i class="fas fa-plus"></i> NEW TASK
         </a>
       </div>
     </div>
@@ -145,17 +156,16 @@
     <div id="fullCalendar"></div>
 
     <!-- Priority & Category Legend -->
-    <div class="calendar-legend">
-      <span><strong>Priorities:</strong></span>
-      <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span> Urgent</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span> High</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6;"></span> Medium</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#3b82f6;"></span> Low</div>
+    <div class="calendar-legend-matte">
+      <span style="color: #ffffff; font-weight: 600;">Priorities:</span>
+      <div class="legend-item"><span class="legend-dot" style="background:#ff6b3d;"></span> Urgent / High</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#33e1ed;"></span> Medium</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#2e6ff2;"></span> Low</div>
       
       {% if categories %}
-      <span style="margin-left: 16px;"><strong>Categories:</strong></span>
+      <span style="margin-left: 16px; color: #ffffff; font-weight: 600;">Categories:</span>
       {% for cat in categories %}
-      <div class="legend-item"><span class="legend-dot" style="background:{{ cat.color }};"></span> {{ cat.name }}</div>
+      <div class="legend-item"><span class="legend-dot" style="background:{{ cat.color|default:'#2e6ff2' }};"></span> {{ cat.name }}</div>
       {% endfor %}
       {% endif %}
     </div>
@@ -228,4 +238,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-

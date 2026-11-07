@@ -1,163 +1,472 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Dashboard - TaskFlow{% endblock %}
-
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="dashboard">
+<div class="shakuro-bento-dashboard">
 
-  <!-- AI Intelligence Copilot: Nova -->
-  <div class="glass-card ai-copilot-card">
-    <div class="ai-card-header">
-      <div class="ai-avatar">
-        <i class="fas fa-sparkles"></i>
+  <!-- ═════════════════════════════════════════════════════════════════ -->
+  <!-- COLUMN 1: Groups, Quick Filters & Tag Selector (~280px)           -->
+  <!-- ═════════════════════════════════════════════════════════════════ -->
+  <aside class="bento-col bento-col-sidebar">
+    <!-- Primary CTA Pill -->
+    <a href="{% url 'category_create' %}" class="bento-cta-pill">
+      <i class="fas fa-plus"></i>
+      <span>CREATE NEW GROUP</span>
+    </a>
+
+    <!-- Task Groups Card -->
+    <div class="shakuro-card groups-card">
+      <div class="card-title-row">
+        <h3 class="card-heading">Task Groups</h3>
+        <a href="{% url 'category_list' %}" class="icon-link-subtle" title="Manage Categories">
+          <i class="fas fa-ellipsis-h"></i>
+        </a>
       </div>
-      <div class="ai-header-info">
-        <div class="ai-title-row">
-          <h3 class="ai-name">{{ ai_greeting.name }}</h3>
-          <span class="badge-pill badge-ai"><span class="pulse-dot"></span> Copilot Active</span>
+
+      <div class="groups-list">
+        {% for cat in categories %}
+        <a href="{% url 'task_list' %}?category={{ cat.id }}" class="group-item" style="--cat-accent: {{ cat.color|default:'#2e6ff2' }};">
+          <span class="group-indicator" style="background-color: {{ cat.color|default:'#2e6ff2' }};"></span>
+          <div class="group-info">
+            <span class="group-name">{{ cat.name }}</span>
+            <span class="group-count">{{ cat.task_count }} task{{ cat.task_count|pluralize }}</span>
+          </div>
+          <span class="group-edit-icon"><i class="fas fa-chevron-right"></i></span>
+        </a>
+        {% empty %}
+        <div class="group-item" style="--cat-accent: #ff6b3d;">
+          <span class="group-indicator" style="background-color: #ff6b3d;"></span>
+          <div class="group-info">
+            <span class="group-name">Work & Projects</span>
+            <span class="group-count">{{ stats.total }} tasks</span>
+          </div>
+          <span class="group-edit-icon"><i class="fas fa-chevron-right"></i></span>
         </div>
-        <p class="ai-sub">{{ ai_greeting.greeting }}</p>
+        <div class="group-item" style="--cat-accent: #33e1ed;">
+          <span class="group-indicator" style="background-color: #33e1ed;"></span>
+          <div class="group-info">
+            <span class="group-name">Personal & Travel</span>
+            <span class="group-count">Active</span>
+          </div>
+          <span class="group-edit-icon"><i class="fas fa-chevron-right"></i></span>
+        </div>
+        {% endfor %}
       </div>
-      {% if ai_greeting.streak_msg %}
-      <span class="badge-streak"><i class="fas fa-fire"></i> {{ ai_greeting.streak_msg }}</span>
+    </div>
+
+    <!-- Quick-Filter 2x2 Grid -->
+    <div class="quick-filters-grid">
+      <a href="{% url 'task_list' %}?sort=due_date" class="quick-filter-tile active-tile">
+        <div class="tile-icon star-icon"><i class="fas fa-star"></i></div>
+        <div class="tile-meta">
+          <span class="tile-label">Today</span>
+          <span class="tile-val">{{ stats.pending }}</span>
+        </div>
+      </a>
+      <a href="{% url 'task_list' %}?sort=-due_date" class="quick-filter-tile">
+        <div class="tile-icon cal-icon"><i class="fas fa-calendar-day"></i></div>
+        <div class="tile-meta">
+          <span class="tile-label">Tomorrow</span>
+          <span class="tile-val">4</span>
+        </div>
+      </a>
+      <a href="{% url 'task_list' %}?priority=urgent" class="quick-filter-tile">
+        <div class="tile-icon fire-icon"><i class="fas fa-fire"></i></div>
+        <div class="tile-meta">
+          <span class="tile-label">Urgent</span>
+          <span class="tile-val">{{ stats.overdue }}</span>
+        </div>
+      </a>
+      <a href="{% url 'task_list' %}?status=completed" class="quick-filter-tile">
+        <div class="tile-icon check-icon"><i class="fas fa-check-double"></i></div>
+        <div class="tile-meta">
+          <span class="tile-label">Done</span>
+          <span class="tile-val">{{ stats.completed }}</span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Tag Selector Card -->
+    <div class="shakuro-card tags-card">
+      <div class="card-title-row">
+        <h4 class="card-subheading">Tags</h4>
+        <span class="badge-tag-count">5 active</span>
+      </div>
+      <div class="tags-cloud">
+        <span class="tag-pill tag-pill-coral">#urgent</span>
+        <span class="tag-pill tag-pill-aqua">#roadmap</span>
+        <span class="tag-pill tag-pill-blue">#design</span>
+        <span class="tag-pill tag-pill-slate">#frontend</span>
+        <span class="tag-pill tag-pill-slate">#meeting</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═════════════════════════════════════════════════════════════════ -->
+  <!-- COLUMN 2: Center Main Workstream (Flexible 1fr)                  -->
+  <!-- ═════════════════════════════════════════════════════════════════ -->
+  <section class="bento-col bento-col-main">
+
+    <!-- Dual Highlight Mini-Cards Subgrid -->
+    <div class="dual-highlight-grid">
+      <!-- Card 1: Coral Orange Accent -->
+      <div class="highlight-card highlight-coral">
+        <div class="highlight-top">
+          <span class="highlight-category-tag">MEETINGS & STRATEGY</span>
+          <span class="highlight-badge-time badge-coral">
+            <i class="far fa-clock"></i> 10:30 AM
+          </span>
+        </div>
+        <h4 class="highlight-title">
+          {% if highlight_tasks.0 %}{{ highlight_tasks.0.title }}{% else %}Sprint Sync & Architecture Review{% endif %}
+        </h4>
+        <div class="highlight-bottom">
+          <div class="mini-progress-ring">
+            <svg viewBox="0 0 36 36" class="circular-chart-coral">
+              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              <path class="circle-bar" stroke-dasharray="{{ stats.urgent_rate }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            </svg>
+            <span class="ring-val">{{ stats.urgent_rate }}%</span>
+          </div>
+          <span class="highlight-context">High Priority focus</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Aqua Mint Accent -->
+      <div class="highlight-card highlight-aqua">
+        <div class="highlight-top">
+          <span class="highlight-category-tag">DEVELOPMENT & RELEASE</span>
+          <span class="highlight-badge-time badge-aqua">
+            <i class="far fa-clock"></i> 02:15 PM
+          </span>
+        </div>
+        <h4 class="highlight-title">
+          {% if highlight_tasks.1 %}{{ highlight_tasks.1.title }}{% else %}FullCalendar & PWA Offline Verification{% endif %}
+        </h4>
+        <div class="highlight-bottom">
+          <div class="mini-progress-ring">
+            <svg viewBox="0 0 36 36" class="circular-chart-aqua">
+              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              <path class="circle-bar" stroke-dasharray="{{ stats.completion_rate }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            </svg>
+            <span class="ring-val">{{ stats.completion_rate }}%</span>
+          </div>
+          <span class="highlight-context">Sprint milestone</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Concentric 3-Ring Radial SVG Chart Card -->
+    <div class="shakuro-card concentric-rings-card">
+      <div class="card-title-row">
+        <div>
+          <h3 class="card-heading">Weekly Productivity & Velocity</h3>
+          <p class="card-sub-caption">Multi-tier execution metrics across pending and urgent goals</p>
+        </div>
+        <span class="badge-status-pill"><span class="pulse-emerald"></span> Live Sync</span>
+      </div>
+
+      <div class="rings-visualization-wrapper">
+        <div class="rings-svg-container">
+          <svg class="concentric-rings-svg" viewBox="0 0 180 180">
+            <!-- Background Tracks -->
+            <circle cx="90" cy="90" r="68" class="ring-track ring-track-outer" />
+            <circle cx="90" cy="90" r="50" class="ring-track ring-track-middle" />
+            <circle cx="90" cy="90" r="32" class="ring-track ring-track-inner" />
+
+            <!-- Active Concentric Rings -->
+            <!-- Outer: Cobalt Blue (Sprint / Velocity, circumference ~ 427.26) -->
+            <circle cx="90" cy="90" r="68" class="ring-progress ring-outer"
+              stroke-dasharray="427.26"
+              style="stroke-dashoffset: calc(427.26 - (427.26 * {{ stats.sprint_rate }} / 100));" />
+
+            <!-- Middle: Coral Orange (Urgent priority, circumference ~ 314.16) -->
+            <circle cx="90" cy="90" r="50" class="ring-progress ring-middle"
+              stroke-dasharray="314.16"
+              style="stroke-dashoffset: calc(314.16 - (314.16 * {{ stats.urgent_rate }} / 100));" />
+
+            <!-- Inner: Aqua Mint (Completed tasks, circumference ~ 201.06) -->
+            <circle cx="90" cy="90" r="32" class="ring-progress ring-inner"
+              stroke-dasharray="201.06"
+              style="stroke-dashoffset: calc(201.06 - (201.06 * {{ stats.completion_rate }} / 100));" />
+          </svg>
+          <div class="rings-center-stat">
+            <span class="center-stat-val">{{ stats.completion_rate }}%</span>
+            <span class="center-stat-lbl">COMPLETED</span>
+          </div>
+        </div>
+
+        <div class="rings-legend-list">
+          <div class="legend-row">
+            <span class="legend-dot dot-cobalt"></span>
+            <div class="legend-meta">
+              <span class="legend-title">Sprint Velocity</span>
+              <span class="legend-subtitle">Total workload velocity</span>
+            </div>
+            <span class="legend-metric text-cobalt">{{ stats.sprint_rate }}%</span>
+          </div>
+
+          <div class="legend-row">
+            <span class="legend-dot dot-coral"></span>
+            <div class="legend-meta">
+              <span class="legend-title">Urgent Priority</span>
+              <span class="legend-subtitle">Critical deadlines met</span>
+            </div>
+            <span class="legend-metric text-coral">{{ stats.urgent_rate }}%</span>
+          </div>
+
+          <div class="legend-row">
+            <span class="legend-dot dot-aqua"></span>
+            <div class="legend-meta">
+              <span class="legend-title">Task Completion</span>
+              <span class="legend-subtitle">{{ stats.completed }} of {{ stats.total }} tasks</span>
+            </div>
+            <span class="legend-metric text-aqua">{{ stats.completion_rate }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Subtasks Card -->
+    <div class="shakuro-card subtasks-interactive-card">
+      <div class="card-title-row">
+        <div class="subtask-header-left">
+          <h3 class="card-heading">Active Subtasks</h3>
+          <span class="subtask-count-pill">{{ subtasks|length }} active</span>
+        </div>
+        <a href="{% url 'task_list' %}" class="subtle-text-btn">View All Tasks</a>
+      </div>
+
+      <div class="subtasks-stream" id="subtasksList">
+        {% for st in subtasks %}
+        <div class="subtask-row {% if st.is_completed %}completed-row{% endif %}" data-id="{{ st.id }}">
+          <span class="drag-handle-grip" title="Drag to reorder">
+            <i class="fas fa-grip-vertical"></i>
+          </span>
+          <label class="shakuro-circular-checkbox">
+            <input type="checkbox" {% if st.is_completed %}checked{% endif %} onchange="toggleSubtaskStatus(this, {{ st.id }})">
+            <span class="circle-check-indicator"></span>
+          </label>
+          <div class="subtask-details">
+            <span class="subtask-text">{{ st.title }}</span>
+            <span class="subtask-parent-ref">{{ st.task.title|truncatechars:32 }}</span>
+          </div>
+          <button type="button" class="btn-subtask-del" onclick="deleteSubtask({{ st.id }})" title="Remove subtask">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        {% empty %}
+        <div class="subtask-row">
+          <label class="shakuro-circular-checkbox">
+            <input type="checkbox" checked disabled>
+            <span class="circle-check-indicator"></span>
+          </label>
+          <div class="subtask-details">
+            <span class="subtask-text">Review and merge security rate-limiting PR</span>
+            <span class="subtask-parent-ref">TaskFlow v2.0 Production Hardening</span>
+          </div>
+        </div>
+        <div class="subtask-row">
+          <label class="shakuro-circular-checkbox">
+            <input type="checkbox" disabled>
+            <span class="circle-check-indicator"></span>
+          </label>
+          <div class="subtask-details">
+            <span class="subtask-text">Verify FullCalendar drag-and-drop schedule syncing</span>
+            <span class="subtask-parent-ref">Calendar Integration</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Quick Add Subtask Form -->
+      <div class="subtask-inline-add">
+        <input type="text" id="newSubtaskInput" placeholder="Add a new subtask to imminent task..." class="subtask-input-field" onkeydown="if(event.key==='Enter'){event.preventDefault(); addSubtask({{ imminent_task.id|default:1 }});}">
+        <button type="button" class="subtask-add-btn" onclick="addSubtask({{ imminent_task.id|default:1 }})">
+          <i class="fas fa-plus"></i> Add
+        </button>
+      </div>
+    </div>
+
+    <!-- Nova AI Copilot Assistant -->
+    <div class="shakuro-card ai-nova-card">
+      <div class="nova-header">
+        <div class="nova-avatar-ring">
+          <i class="fas fa-sparkles"></i>
+        </div>
+        <div class="nova-greeting-info">
+          <div class="nova-name-row">
+            <h4 class="nova-title">Nova &mdash; {{ ai_greeting.name|default:'Productivity Copilot' }}</h4>
+            <span class="nova-online-badge"><span class="pulse-emerald"></span> Online</span>
+          </div>
+          <p class="nova-greeting-sub">{{ ai_greeting.greeting }}</p>
+        </div>
+        {% if ai_greeting.streak_msg %}
+        <span class="nova-streak-pill"><i class="fas fa-fire"></i> {{ ai_greeting.streak_msg }}</span>
+        {% endif %}
+      </div>
+
+      <div class="nova-quote-box">
+        <i class="fas fa-quote-left quote-glyph"></i>
+        <span>{{ ai_greeting.encouragement }}</span>
+      </div>
+
+      {% if procrastination_alert %}
+      <div class="nova-alert-box">
+        <i class="fas fa-bolt-lightning text-coral"></i>
+        <div>
+          <span class="nova-alert-roast">{{ procrastination_alert.roast }}</span>
+          <span class="nova-alert-suggestion">{{ procrastination_alert.suggestion }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if schedule_tip %}
+      <div class="nova-tip-box">
+        <i class="fas fa-lightbulb text-aqua"></i>
+        <span>{{ schedule_tip }}</span>
+      </div>
       {% endif %}
     </div>
 
-    <div class="ai-quote">
-      <i class="fas fa-quote-left quote-mark"></i>
-      <span>{{ ai_greeting.encouragement }}</span>
-    </div>
+  </section>
 
-    {% if procrastination_alert %}
-    <div class="ai-alert-banner">
-      <i class="fas fa-triangle-exclamation"></i>
-      <div class="ai-alert-content">
-        <p class="ai-alert-title">{{ procrastination_alert.roast }}</p>
-        <p class="ai-alert-sub">{{ procrastination_alert.suggestion }}</p>
+  <!-- ═════════════════════════════════════════════════════════════════ -->
+  <!-- COLUMN 3: Time Horizon, Timeline & Reminders (~340px)             -->
+  <!-- ═════════════════════════════════════════════════════════════════ -->
+  <aside class="bento-col bento-col-schedule">
+
+    <!-- 5-Day Horizontal Date Selector Strip -->
+    <div class="shakuro-card date-strip-card">
+      <div class="card-title-row">
+        <h4 class="card-heading">Schedule Horizon</h4>
+        <a href="{% url 'calendar_view' %}" class="subtle-text-btn"><i class="far fa-calendar-alt"></i> Month</a>
       </div>
-    </div>
-    {% endif %}
 
-    {% if schedule_tip %}
-    <div class="ai-tip-banner">
-      <i class="fas fa-lightbulb"></i>
-      <span>{{ schedule_tip }}</span>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- Gamification / Mastery Bar -->
-  <div class="glass-card mastery-card">
-    <div class="mastery-header">
-      <div class="mastery-badge">
-        <div class="mastery-icon">
-          <i class="fas fa-award"></i>
-        </div>
-        <div>
-          <h4 class="mastery-title">Level {{ gamification.level }} &mdash; {{ gamification.title }}</h4>
-          <p class="mastery-sub">{{ gamification.completed_count }} tasks completed &bull; {{ gamification.xp }} XP</p>
-        </div>
-      </div>
-      <span class="mastery-xp">{{ gamification.progress }} / 100 XP</span>
-    </div>
-    <div class="progress-track">
-      <div class="progress-fill" style="width: {{ gamification.progress }}%;"></div>
-    </div>
-  </div>
-
-  <!-- Stats Grid -->
-  <div class="stats-grid">
-    <div class="stat-card glow-purple">
-      <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
-      <div class="stat-info"><h3>{{ stats.total }}</h3><p>Total Tasks</p></div>
-    </div>
-    <div class="stat-card glow-blue">
-      <div class="stat-icon"><i class="fas fa-clock"></i></div>
-      <div class="stat-info"><h3>{{ stats.pending }}</h3><p>Pending</p></div>
-    </div>
-    <div class="stat-card glow-green">
-      <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-      <div class="stat-info"><h3>{{ stats.completed }}</h3><p>Completed</p></div>
-    </div>
-    <div class="stat-card glow-red">
-      <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-      <div class="stat-info"><h3>{{ stats.overdue }}</h3><p>Overdue</p></div>
-    </div>
-  </div>
-
-  <!-- Progress Section -->
-  <div class="progress-section glass-card">
-    <div class="progress-header">
-      <h3><i class="fas fa-chart-line"></i> Completion Rate</h3>
-      <span class="progress-percentage">{{ stats.completion_rate }}%</span>
-    </div>
-    <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: {{ stats.completion_rate }}%"></div>
-    </div>
-  </div>
-
-  <div class="dashboard-grid">
-    <!-- Recent Tasks -->
-    <div class="glass-card task-section">
-      <div class="section-header">
-        <h3><i class="fas fa-bolt"></i> Recent Tasks</h3>
-        <a href="{% url 'task_list' %}" class="link-text">View All</a>
-      </div>
-      <div class="task-list-compact">
-        {% for task in recent_tasks %}
-        <div class="task-item-compact {% if task.is_overdue %}overdue{% endif %}">
-          <div class="task-checkbox-wrapper">
-            <button class="task-toggle" data-task-id="{{ task.id }}">
-              <i class="far {% if task.status == 'completed' %}fa-check-square{% else %}fa-square{% endif %}"></i>
-            </button>
-          </div>
-          <div class="task-content">
-            <span class="task-title">{{ task.title }}</span>
-            <span class="task-meta">
-              <span class="badge-priority {{ task.priority }}">{{ task.priority }}</span>
-              {% if task.due_date %}
-              <span class="task-due"><i class="far fa-clock"></i> {{ task.due_date|date:"M d" }}</span>
-              {% endif %}
-            </span>
-          </div>
-        </div>
-        {% empty %}
-        <div class="empty-state">
-          <i class="fas fa-inbox"></i>
-          <p>No tasks yet. Create your first task!</p>
+      <div class="date-strip-pills">
+        {% for day in date_strip %}
+        <div class="date-strip-item {% if day.is_active %}active-cobalt-pill{% endif %}">
+          <span class="strip-day-name">{{ day.day_name }}</span>
+          <span class="strip-day-num">{{ day.day_num }}</span>
         </div>
         {% endfor %}
       </div>
     </div>
 
-    <!-- Urgent Tasks -->
-    <div class="glass-card task-section">
-      <div class="section-header">
-        <h3><i class="fas fa-fire"></i> Urgent Priority</h3>
+    <!-- Hourly Vertical Timeline -->
+    <div class="shakuro-card timeline-card">
+      <div class="card-title-row">
+        <h4 class="card-heading">Hourly Timeline</h4>
+        <span class="timeline-indicator-tag"><i class="far fa-clock"></i> Live Flow</span>
       </div>
-      <div class="task-list-compact">
-        {% for task in urgent_tasks %}
-        <div class="task-item-compact urgent">
-          <div class="task-content">
-            <span class="task-title">{{ task.title }}</span>
-            <span class="task-meta">
-              {% if task.due_date %}
-              <span class="task-due urgent-text">Due {{ task.due_date|timeuntil }}</span>
-              {% endif %}
-            </span>
+
+      <div class="timeline-stream">
+        <!-- Live Current Time Indicator -->
+        <div class="timeline-live-line" style="top: 72px;">
+          <span class="live-line-dot"></span>
+          <span class="live-line-bar"></span>
+          <span class="live-line-badge">10:45 AM</span>
+        </div>
+
+        <!-- 10:00 AM Slot -->
+        <div class="timeline-slot">
+          <span class="slot-time">10:00</span>
+          <div class="slot-content">
+            <div class="timeline-event-card event-coral">
+              <span class="event-accent-bar" style="background-color: #ff6b3d;"></span>
+              <div class="event-details">
+                <span class="event-title">Engineering Architecture & Security</span>
+                <span class="event-time">10:00 &mdash; 11:00 AM</span>
+              </div>
+            </div>
           </div>
-          <a href="{% url 'task_update' task.id %}" class="btn-icon"><i class="fas fa-edit"></i></a>
         </div>
-        {% empty %}
-        <div class="empty-state">
-          <i class="fas fa-mug-hot"></i>
-          <p>No urgent tasks. You're all caught up!</p>
+
+        <!-- 11:00 AM Slot -->
+        <div class="timeline-slot">
+          <span class="slot-time">11:00</span>
+          <div class="slot-content">
+            <div class="timeline-event-card event-aqua">
+              <span class="event-accent-bar" style="background-color: #33e1ed;"></span>
+              <div class="event-details">
+                <span class="event-title">FullCalendar Sync & Task API Review</span>
+                <span class="event-time">11:15 &mdash; 12:00 PM</span>
+              </div>
+            </div>
+          </div>
         </div>
-        {% endfor %}
+
+        <!-- 12:00 PM Slot -->
+        <div class="timeline-slot">
+          <span class="slot-time">12:00</span>
+          <div class="slot-content">
+            <div class="timeline-empty-slot">Lunch & Offline Break</div>
+          </div>
+        </div>
+
+        <!-- 01:00 PM Slot -->
+        <div class="timeline-slot">
+          <span class="slot-time">13:00</span>
+          <div class="slot-content">
+            <div class="timeline-event-card event-cobalt">
+              <span class="event-accent-bar" style="background-color: #2e6ff2;"></span>
+              <div class="event-details">
+                <span class="event-title">Celery Background Workers Audit</span>
+                <span class="event-time">13:00 &mdash; 14:00 PM</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 02:00 PM Slot -->
+        <div class="timeline-slot">
+          <span class="slot-time">14:00</span>
+          <div class="slot-content">
+            <div class="timeline-event-card event-purple">
+              <span class="event-accent-bar" style="background-color: #a855f7;"></span>
+              <div class="event-details">
+                <span class="event-title">Design System Matte Polish</span>
+                <span class="event-time">14:15 &mdash; 15:00 PM</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 03:00 PM Slot -->
+        <div class="timeline-slot">
+          <span class="slot-time">15:00</span>
+          <div class="slot-content">
+            <div class="timeline-empty-slot">Wrap-up & Sprint Commit</div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+
+    <!-- Imminent Reminder Toast Card -->
+    <div class="shakuro-card imminent-reminder-card">
+      <div class="reminder-icon-box">
+        <i class="fas fa-bell"></i>
+      </div>
+      <div class="reminder-content">
+        <span class="reminder-label">Next Imminent Goal</span>
+        <h5 class="reminder-title">
+          {% if imminent_task %}{{ imminent_task.title }}{% else %}Complete CI/CD Deployment Workflow{% endif %}
+        </h5>
+        <div class="reminder-tags">
+          <span class="reminder-category-pill">
+            {% if imminent_task and imminent_task.category %}{{ imminent_task.category.name }}{% else %}Sprint Priority{% endif %}
+          </span>
+          <span class="reminder-countdown">
+            <i class="far fa-clock"></i> {% if imminent_task and imminent_task.due_date %}{{ imminent_task.due_date|timeuntil }} left{% else %}In 45 mins{% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
 </div>
 {% endblock %}

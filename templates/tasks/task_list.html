@@ -1,171 +1,125 @@
 {% extends 'base.html' %}
 
-{% block title %}
-Tasks - TaskFlow
-{% endblock %}
-
-{% block page_title %}
-All Tasks
-{% endblock %}
+{% block title %}Tasks - TaskFlow{% endblock %}
+{% block page_title %}All Tasks{% endblock %}
 
 {% block content %}
 <div class="task-list-page">
-    <!-- Filters -->
-    <div class="filters-bar glass-card">
+    <!-- Shakuro Filter Bar -->
+    <div class="shakuro-card filters-card-matte">
         <form method="get" class="filters-form">
-            <div class="filter-group">
-                <input type="text" name="q" value="{{ search_query }}" placeholder="Search tasks..." class="form-input search-input">
+            <div class="filter-group-search">
+                <i class="fas fa-search search-lens"></i>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search tasks, descriptions..." class="shakuro-input search-input">
             </div>
             <div class="filter-group">
-                <select name="status" class="form-select" onchange="this.form.submit()">
-                    <option value="">All Status</option>
+                <select name="status" class="shakuro-select" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
                     {% for value, label in status_choices %}
-<option value="{{ value }}"
-{% if status_filter == value %}
-selected
-{% endif %}
->{{ label }}</option>
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="filter-group">
-                <select name="priority" class="form-select" onchange="this.form.submit()">
+                <select name="priority" class="shakuro-select" onchange="this.form.submit()">
                     <option value="">All Priorities</option>
                     {% for value, label in priority_choices %}
-<option value="{{ value }}"
-{% if priority_filter == value %}
-selected
-{% endif %}
->{{ label }}</option>
+                    <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="filter-group">
-                <select name="category" class="form-select" onchange="this.form.submit()">
+                <select name="category" class="shakuro-select" onchange="this.form.submit()">
                     <option value="">All Categories</option>
                     {% for cat in categories %}
-<option value="{{ cat.id }}"
-{% if category_filter == cat.id|stringformat:"s" %}
-selected
-{% endif %}
->{{ cat.name }}</option>
+                    <option value="{{ cat.id }}" {% if category_filter == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <a href="{% url 'task_list' %}" class="btn btn-ghost">
-                <i class="fas fa-undo"></i> Reset
+            <a href="{% url 'task_list' %}" class="btn-shakuro-ghost" title="Reset Filters">
+                <i class="fas fa-undo"></i>
+            </a>
+            <a href="{% url 'export_tasks_ics' %}" class="btn-shakuro-ics" title="Export iCal .ics">
+                <i class="fas fa-calendar-plus"></i> Export .ics
             </a>
         </form>
     </div>
 
-    <!-- Task Grid -->
-    <div class="task-grid">
+    <!-- Task Cards Grid -->
+    <div class="shakuro-task-grid">
         {% for task in tasks %}
-<div class="task-card
-{% if task.is_overdue %}
-overdue
-{% endif %}
-{% if task.is_pinned %}
-pinned
-{% endif %}
-">
+        <div class="shakuro-task-card {% if task.is_overdue %}card-overdue{% endif %} {% if task.status == 'completed' %}card-completed{% endif %}"
+             style="--task-accent: {% if task.priority == 'urgent' %}#ff6b3d{% elif task.priority == 'high' %}#ff6b3d{% elif task.priority == 'medium' %}#33e1ed{% else %}#2e6ff2{% endif %};">
+            <div class="shakuro-task-accent-bar" style="background-color: {% if task.priority == 'urgent' or task.priority == 'high' %}#ff6b3d{% elif task.priority == 'medium' %}#33e1ed{% else %}#2e6ff2{% endif %};"></div>
+
             <div class="task-card-header">
-                <div class="task-priority-badge {{ task.priority }}">
-                    <i class="fas fa-circle"></i> {{ task.priority|title }}
-                </div>
-                {% if task.is_pinned %}
-                <span class="pin-badge"><i class="fas fa-thumbtack"></i></span>
-                {% endif %}
-                <div class="task-actions-dropdown">
-                    <button class="btn-icon" onclick="toggleDropdown(this)">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="{% url 'task_update' task.id %}"><i class="fas fa-edit"></i> Edit</a>
-                        <a href="{% url 'task_archive' task.id %}"><i class="fas fa-archive"></i> Archive</a>
-                        <a href="{% url 'task_delete' task.id %}" class="danger"><i class="fas fa-trash"></i> Delete</a>
+                <span class="shakuro-badge-priority priority-{{ task.priority }}">
+                    {{ task.priority|upper }}
+                </span>
+                
+                <div class="task-header-right">
+                    {% if task.is_pinned %}
+                    <span class="pin-badge"><i class="fas fa-thumbtack"></i></span>
+                    {% endif %}
+                    <div class="task-actions-dropdown">
+                        <button class="btn-icon-subtle" onclick="toggleDropdown(this)" title="Actions">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                        <div class="dropdown-menu-shakuro">
+                            <a href="{% url 'task_update' task.id %}"><i class="fas fa-pen"></i> Edit Task</a>
+                            <a href="{% url 'task_archive' task.id %}"><i class="fas fa-archive"></i> Archive</a>
+                            <a href="{% url 'task_delete' task.id %}" class="danger-link"><i class="fas fa-trash-alt"></i> Delete</a>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="task-card-body">
-                <h4 class="task-title">{{ task.title }}</h4>
+                <h4 class="shakuro-task-title {% if task.status == 'completed' %}title-strikethrough{% endif %}">{{ task.title }}</h4>
                 {% if task.description %}
-                <p class="task-desc">{{ task.description|truncatechars:100 }}</p>
+                <p class="shakuro-task-desc">{{ task.description|truncatechars:110 }}</p>
                 {% endif %}
 
                 {% if task.category %}
-                <span class="task-category" style="color: {{ task.category.color }}">
-                    <i class="fas {{ task.category.icon }}"></i> {{ task.category.name }}
-                </span>
-                {% endif %}
-
-                {% if task.tags %}
-                <div class="task-tags">
-                    {% for tag in task.tags %}
-                    <span class="tag">{{ tag }}</span>
-                    {% endfor %}
+                <div class="shakuro-category-pill" style="--pill-color: {{ task.category.color|default:'#2e6ff2' }};">
+                    <span class="cat-pill-dot" style="background-color: {{ task.category.color|default:'#2e6ff2' }};"></span>
+                    <span class="cat-pill-name">{{ task.category.name }}</span>
                 </div>
                 {% endif %}
             </div>
 
             <div class="task-card-footer">
-                <div class="task-meta-row">
+                <div class="task-meta-left">
                     {% if task.due_date %}
-<span class="task-due
-{% if task.is_overdue %}
-overdue-text
-{% elif task.is_due_soon %}
-soon-text
-{% endif %}
-">
-                        <i class="far fa-clock"></i> 
-{% if task.is_overdue %}
-Overdue:
-{% endif %}
-                        {{ task.due_date|date:"M d, Y H:i" }}
+                    <span class="task-due-badge {% if task.is_overdue %}badge-due-overdue{% endif %}">
+                        <i class="far fa-clock"></i>
+                        {{ task.due_date|date:"M d, H:i" }}
                     </span>
                     {% endif %}
 
                     {% if task.subtasks.exists %}
-                    <span class="subtask-count">
-                        <i class="fas fa-list-check"></i> 
+                    <span class="subtask-count-badge">
+                        <i class="fas fa-list-check"></i>
                         {{ task.subtasks.filter.is_completed.count }}/{{ task.subtasks.count }}
                     </span>
                     {% endif %}
                 </div>
 
-<button class="task-toggle-btn
-{% if task.status == 'completed' %}
-completed
-{% endif %}
-"
+                <button class="shakuro-task-toggle-btn {% if task.status == 'completed' %}is-completed{% endif %}"
                         data-task-id="{{ task.id }}"
                         onclick="toggleTaskStatus(this)">
-<i class="fas
-{% if task.status == 'completed' %}
-fa-check-circle
-{% else %}
-fa-circle
-{% endif %}
-"></i>
-<span>
-{% if task.status == 'completed' %}
-Completed
-{% else %}
-Mark Done
-{% endif %}
-</span>
+                    <i class="fas {% if task.status == 'completed' %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
+                    <span>{% if task.status == 'completed' %}Done{% else %}Mark Done{% endif %}</span>
                 </button>
             </div>
         </div>
         {% empty %}
-        <div class="empty-state full-width">
-            <div class="empty-icon"><i class="fas fa-clipboard-list"></i></div>
-            <h3>No tasks found</h3>
-            <p>Create your first task to get started.</p>
-            <a href="{% url 'task_create' %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus"></i> Create Task
+        <div class="empty-state-card full-grid-width">
+            <div class="empty-icon-circle"><i class="fas fa-clipboard-list"></i></div>
+            <h3 class="empty-title">No tasks found</h3>
+            <p class="empty-caption">Create your first task or clear your search filters.</p>
+            <a href="{% url 'task_create' %}" class="btn-shakuro-cobalt">
+                <i class="fas fa-plus"></i> NEW TASK
             </a>
         </div>
         {% endfor %}
