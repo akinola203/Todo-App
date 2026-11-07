@@ -160,6 +160,21 @@ class TaskFlowViewsTests(TestCase):
         task.refresh_from_db()
         self.assertEqual(task.status, 'archived')
 
+    def test_instant_demo(self):
+        """Guest user can click 'Try Instant Demo' to auto-seed starter categories and tasks."""
+        self.client.logout()
+        res = self.client.get(reverse('instant_demo'))
+        self.assertEqual(res.status_code, 302)
+        self.assertRedirects(res, reverse('dashboard'))
+
+        # Verify demo user has General, Meetings, and Trip groups with tasks
+        demo_user = User.objects.get(username='demo_guest')
+        self.assertTrue(Category.objects.filter(user=demo_user, name='General').exists())
+        self.assertTrue(Category.objects.filter(user=demo_user, name='Meetings').exists())
+        self.assertTrue(Category.objects.filter(user=demo_user, name='Trip').exists())
+        self.assertTrue(Task.objects.filter(user=demo_user, title__icontains="Amanda").exists())
+        self.assertTrue(Task.objects.filter(user=demo_user, title__icontains="Norway").exists())
+
 
 class AIUtilsAndCeleryTests(TestCase):
     def setUp(self):

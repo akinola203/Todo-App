@@ -8,326 +8,354 @@
 <div class="shakuro-bento-dashboard">
 
   <!-- ═════════════════════════════════════════════════════════════════ -->
-  <!-- COLUMN 1: Groups, Quick Filters & Tag Selector (~280px)           -->
+  <!-- COLUMN 1: Groups, Quick Filters & Tags (~280px)                   -->
   <!-- ═════════════════════════════════════════════════════════════════ -->
-  <aside class="bento-col bento-col-sidebar">
-    <!-- Primary CTA Pill -->
-    <a href="{% url 'category_create' %}" class="bento-cta-pill">
+  <aside class="bento-col bento-col-left">
+
+    <!-- Full-width Cobalt Blue Pill Button -->
+    <a href="{% url 'category_create' %}" class="btn-cobalt-full-pill">
       <i class="fas fa-plus"></i>
       <span>CREATE NEW GROUP</span>
     </a>
 
-    <!-- Task Groups Card -->
-    <div class="shakuro-card groups-card">
+    <!-- Task Groups Cards with 4px Rounded Vertical Color Bar -->
+    <div class="shakuro-card groups-bento-card">
       <div class="card-title-row">
-        <h3 class="card-heading">Task Groups</h3>
-        <a href="{% url 'category_list' %}" class="icon-link-subtle" title="Manage Categories">
+        <h3 class="card-heading">Groups</h3>
+        <a href="{% url 'category_list' %}" class="icon-link-subtle" title="Manage Groups">
           <i class="fas fa-ellipsis-h"></i>
         </a>
       </div>
 
       <div class="groups-list">
         {% for cat in categories %}
-        <a href="{% url 'task_list' %}?category={{ cat.id }}" class="group-item" style="--cat-accent: {{ cat.color|default:'#2e6ff2' }};">
-          <span class="group-indicator" style="background-color: {{ cat.color|default:'#2e6ff2' }};"></span>
+        <a href="{% url 'task_list' %}?category={{ cat.id }}" class="group-matte-item" style="--group-color: {{ cat.color|default:'#2e6ff2' }};">
+          <span class="group-left-bar" style="background-color: {{ cat.color|default:'#2e6ff2' }};"></span>
           <div class="group-info">
-            <span class="group-name">{{ cat.name }}</span>
+            <span class="group-title">{{ cat.name }}</span>
             <span class="group-count">{{ cat.task_count }} task{{ cat.task_count|pluralize }}</span>
           </div>
-          <span class="group-edit-icon"><i class="fas fa-chevron-right"></i></span>
+          <span class="group-arrow"><i class="fas fa-chevron-right"></i></span>
         </a>
         {% empty %}
-        <div class="group-item" style="--cat-accent: #ff6b3d;">
-          <span class="group-indicator" style="background-color: #ff6b3d;"></span>
+        <!-- Default Consumer Starter Groups (General, Meetings, Trip) -->
+        <a href="{% url 'task_list' %}" class="group-matte-item" style="--group-color: #2e6ff2;">
+          <span class="group-left-bar" style="background-color: #2e6ff2;"></span>
           <div class="group-info">
-            <span class="group-name">Work & Projects</span>
-            <span class="group-count">{{ stats.total }} tasks</span>
+            <span class="group-title">General</span>
+            <span class="group-count">16 tasks</span>
           </div>
-          <span class="group-edit-icon"><i class="fas fa-chevron-right"></i></span>
-        </div>
-        <div class="group-item" style="--cat-accent: #33e1ed;">
-          <span class="group-indicator" style="background-color: #33e1ed;"></span>
+          <span class="group-arrow"><i class="fas fa-chevron-right"></i></span>
+        </a>
+
+        <a href="{% url 'task_list' %}" class="group-matte-item" style="--group-color: #ff6b3d;">
+          <span class="group-left-bar" style="background-color: #ff6b3d;"></span>
           <div class="group-info">
-            <span class="group-name">Personal & Travel</span>
-            <span class="group-count">Active</span>
+            <span class="group-title">Meetings</span>
+            <span class="group-count">8 tasks</span>
           </div>
-          <span class="group-edit-icon"><i class="fas fa-chevron-right"></i></span>
-        </div>
+          <span class="group-arrow"><i class="fas fa-chevron-right"></i></span>
+        </a>
+
+        <a href="{% url 'task_list' %}" class="group-matte-item" style="--group-color: #33e1ed;">
+          <span class="group-left-bar" style="background-color: #33e1ed;"></span>
+          <div class="group-info">
+            <span class="group-title">Trip</span>
+            <span class="group-count">4 tasks</span>
+          </div>
+          <span class="group-arrow"><i class="fas fa-chevron-right"></i></span>
+        </a>
         {% endfor %}
       </div>
     </div>
 
-    <!-- Quick-Filter 2x2 Grid -->
-    <div class="quick-filters-grid">
-      <a href="{% url 'task_list' %}?sort=due_date" class="quick-filter-tile active-tile">
-        <div class="tile-icon star-icon"><i class="fas fa-star"></i></div>
-        <div class="tile-meta">
-          <span class="tile-label">Today</span>
-          <span class="tile-val">{{ stats.pending }}</span>
-        </div>
-      </a>
-      <a href="{% url 'task_list' %}?sort=-due_date" class="quick-filter-tile">
-        <div class="tile-icon cal-icon"><i class="fas fa-calendar-day"></i></div>
-        <div class="tile-meta">
-          <span class="tile-label">Tomorrow</span>
-          <span class="tile-val">4</span>
-        </div>
-      </a>
-      <a href="{% url 'task_list' %}?priority=urgent" class="quick-filter-tile">
-        <div class="tile-icon fire-icon"><i class="fas fa-fire"></i></div>
-        <div class="tile-meta">
-          <span class="tile-label">Urgent</span>
-          <span class="tile-val">{{ stats.overdue }}</span>
-        </div>
-      </a>
-      <a href="{% url 'task_list' %}?status=completed" class="quick-filter-tile">
-        <div class="tile-icon check-icon"><i class="fas fa-check-double"></i></div>
-        <div class="tile-meta">
-          <span class="tile-label">Done</span>
-          <span class="tile-val">{{ stats.completed }}</span>
-        </div>
-      </a>
+    <!-- Quick Filters: Today in Coral, Tomorrow in Blue + 4 Compact Square Icon Buttons -->
+    <div class="shakuro-card quick-filters-card">
+      <div class="quick-pills-row">
+        <a href="{% url 'task_list' %}?sort=due_date" class="filter-pill pill-today">
+          <i class="fas fa-star"></i>
+          <span>Today</span>
+          <span class="pill-badge-num">{{ stats.pending }}</span>
+        </a>
+        <a href="{% url 'task_list' %}?sort=-due_date" class="filter-pill pill-tomorrow">
+          <i class="fas fa-calendar-day"></i>
+          <span>Tomorrow</span>
+          <span class="pill-badge-num">4</span>
+        </a>
+      </div>
+
+      <!-- 4 Compact Square Icon Buttons: Calendar, Reminders, Share/Export .ics, Magic Add -->
+      <div class="compact-icon-squares-grid">
+        <a href="{% url 'calendar_view' %}" class="icon-square-btn" title="Calendar View">
+          <i class="far fa-calendar-alt"></i>
+        </a>
+        <a href="{% url 'task_list' %}?priority=urgent" class="icon-square-btn" title="Urgent Reminders">
+          <i class="far fa-bell"></i>
+        </a>
+        <a href="{% url 'export_tasks_ics' %}" class="icon-square-btn" title="Export iCal .ics">
+          <i class="fas fa-file-export"></i>
+        </a>
+        <a href="{% url 'task_create' %}" class="icon-square-btn icon-square-magic" title="Magic Add Task">
+          <i class="fas fa-magic"></i>
+        </a>
+      </div>
     </div>
 
-    <!-- Tag Selector Card -->
-    <div class="shakuro-card tags-card">
+    <!-- Bottom Tag Selector Card -->
+    <div class="shakuro-card tags-bento-card">
       <div class="card-title-row">
         <h4 class="card-subheading">Tags</h4>
-        <span class="badge-tag-count">5 active</span>
+        <a href="{% url 'task_create' %}" class="btn-tag-add" title="Add Tag">+ Add tag</a>
       </div>
-      <div class="tags-cloud">
-        <span class="tag-pill tag-pill-coral">#urgent</span>
-        <span class="tag-pill tag-pill-aqua">#roadmap</span>
-        <span class="tag-pill tag-pill-blue">#design</span>
-        <span class="tag-pill tag-pill-slate">#frontend</span>
-        <span class="tag-pill tag-pill-slate">#meeting</span>
+      <div class="tags-badge-cloud">
+        <span class="tag-badge-pill tag-filled-blue">Design</span>
+        <span class="tag-badge-pill tag-outlined">Home</span>
+        <span class="tag-badge-pill tag-outlined">Personal</span>
       </div>
     </div>
+
   </aside>
 
   <!-- ═════════════════════════════════════════════════════════════════ -->
-  <!-- COLUMN 2: Center Main Workstream (Flexible 1fr)                  -->
+  <!-- COLUMN 2: Up-Next Mini Cards, 3-Ring Chart, Subtasks & Magic Add  -->
   <!-- ═════════════════════════════════════════════════════════════════ -->
-  <section class="bento-col bento-col-main">
+  <section class="bento-col bento-col-center">
 
-    <!-- Dual Highlight Mini-Cards Subgrid -->
-    <div class="dual-highlight-grid">
-      <!-- Card 1: Coral Orange Accent -->
-      <div class="highlight-card highlight-coral">
-        <div class="highlight-top">
-          <span class="highlight-category-tag">MEETINGS & STRATEGY</span>
-          <span class="highlight-badge-time badge-coral">
-            <i class="far fa-clock"></i> 10:30 AM
+    <!-- Top 2-Column Subgrid: Next 2 Upcoming Tasks -->
+    <div class="upcoming-subgrid">
+      <!-- Card 1: Amanda at Ruth's (Meetings) with Coral Progress Ring & Today, 4 p.m. Pill -->
+      <div class="upcoming-mini-card card-coral-theme">
+        <div class="mini-card-header">
+          <span class="mini-category-tag">MEETINGS</span>
+          <span class="pill-time-badge badge-coral-tint">
+            <i class="far fa-clock"></i> Today, 4 p.m.
           </span>
         </div>
-        <h4 class="highlight-title">
-          {% if highlight_tasks.0 %}{{ highlight_tasks.0.title }}{% else %}Sprint Sync & Architecture Review{% endif %}
+        <h4 class="mini-task-title">
+          {% if highlight_amanda %}{{ highlight_amanda.title }}{% else %}Amanda at Ruth's{% endif %}
         </h4>
-        <div class="highlight-bottom">
-          <div class="mini-progress-ring">
-            <svg viewBox="0 0 36 36" class="circular-chart-coral">
-              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-              <path class="circle-bar" stroke-dasharray="{{ stats.urgent_rate }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+        <div class="mini-card-footer">
+          <div class="circular-ring-stat">
+            <svg viewBox="0 0 36 36" class="mini-svg-coral">
+              <path class="ring-bg-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              <path class="ring-fill-bar" stroke-dasharray="{{ stats.meetings_rate|default:40 }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
             </svg>
-            <span class="ring-val">{{ stats.urgent_rate }}%</span>
+            <span class="ring-percent">{{ stats.meetings_rate|default:40 }}%</span>
           </div>
-          <span class="highlight-context">High Priority focus</span>
+          <span class="mini-status-note">Priority focus</span>
         </div>
       </div>
 
-      <!-- Card 2: Aqua Mint Accent -->
-      <div class="highlight-card highlight-aqua">
-        <div class="highlight-top">
-          <span class="highlight-category-tag">DEVELOPMENT & RELEASE</span>
-          <span class="highlight-badge-time badge-aqua">
-            <i class="far fa-clock"></i> 02:15 PM
+      <!-- Card 2: Holidays in Norway (Trip) with Aqua Ring & Sat Pill -->
+      <div class="upcoming-mini-card card-aqua-theme">
+        <div class="mini-card-header">
+          <span class="mini-category-tag">TRIP</span>
+          <span class="pill-time-badge badge-aqua-tint">
+            <i class="far fa-calendar-check"></i> Sat
           </span>
         </div>
-        <h4 class="highlight-title">
-          {% if highlight_tasks.1 %}{{ highlight_tasks.1.title }}{% else %}FullCalendar & PWA Offline Verification{% endif %}
+        <h4 class="mini-task-title">
+          {% if highlight_norway %}{{ highlight_norway.title }}{% else %}Holidays in Norway{% endif %}
         </h4>
-        <div class="highlight-bottom">
-          <div class="mini-progress-ring">
-            <svg viewBox="0 0 36 36" class="circular-chart-aqua">
-              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-              <path class="circle-bar" stroke-dasharray="{{ stats.completion_rate }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+        <div class="mini-card-footer">
+          <div class="circular-ring-stat">
+            <svg viewBox="0 0 36 36" class="mini-svg-aqua">
+              <path class="ring-bg-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              <path class="ring-fill-bar" stroke-dasharray="{{ stats.trip_rate|default:80 }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
             </svg>
-            <span class="ring-val">{{ stats.completion_rate }}%</span>
+            <span class="ring-percent">{{ stats.trip_rate|default:80 }}%</span>
           </div>
-          <span class="highlight-context">Sprint milestone</span>
+          <span class="mini-status-note">Weekend departure</span>
         </div>
       </div>
     </div>
 
-    <!-- Concentric 3-Ring Radial SVG Chart Card -->
-    <div class="shakuro-card concentric-rings-card">
+    <!-- Middle Card: Animated 3-Ring Concentric SVG Radial Chart -->
+    <div class="shakuro-card radial-rings-card">
       <div class="card-title-row">
         <div>
-          <h3 class="card-heading">Weekly Productivity & Velocity</h3>
-          <p class="card-sub-caption">Multi-tier execution metrics across pending and urgent goals</p>
+          <h3 class="card-heading">Productivity Activity</h3>
+          <p class="card-sub-caption">Real-time velocity across daily workstreams</p>
         </div>
-        <span class="badge-status-pill"><span class="pulse-emerald"></span> Live Sync</span>
+        <span class="live-activity-badge"><span class="activity-dot"></span> Live Sync</span>
       </div>
 
-      <div class="rings-visualization-wrapper">
-        <div class="rings-svg-container">
-          <svg class="concentric-rings-svg" viewBox="0 0 180 180">
+      <div class="radial-chart-flex">
+        <div class="radial-svg-box">
+          <svg class="concentric-svg" viewBox="0 0 180 180">
             <!-- Background Tracks -->
-            <circle cx="90" cy="90" r="68" class="ring-track ring-track-outer" />
-            <circle cx="90" cy="90" r="50" class="ring-track ring-track-middle" />
-            <circle cx="90" cy="90" r="32" class="ring-track ring-track-inner" />
+            <circle cx="90" cy="90" r="68" class="svg-track" />
+            <circle cx="90" cy="90" r="50" class="svg-track" />
+            <circle cx="90" cy="90" r="32" class="svg-track" />
 
             <!-- Active Concentric Rings -->
-            <!-- Outer: Cobalt Blue (Sprint / Velocity, circumference ~ 427.26) -->
-            <circle cx="90" cy="90" r="68" class="ring-progress ring-outer"
+            <!-- Outer Ring: All Tasks in #2e6ff2 (r=68, circumference ~427.26) -->
+            <circle cx="90" cy="90" r="68" class="svg-ring ring-cobalt-bar"
               stroke-dasharray="427.26"
-              style="stroke-dashoffset: calc(427.26 - (427.26 * {{ stats.sprint_rate }} / 100));" />
+              style="stroke-dashoffset: calc(427.26 - (427.26 * {{ stats.all_rate|default:70 }} / 100));" />
 
-            <!-- Middle: Coral Orange (Urgent priority, circumference ~ 314.16) -->
-            <circle cx="90" cy="90" r="50" class="ring-progress ring-middle"
+            <!-- Middle Ring: Meetings in #ff6b3d (r=50, circumference ~314.16) -->
+            <circle cx="90" cy="90" r="50" class="svg-ring ring-coral-bar"
               stroke-dasharray="314.16"
-              style="stroke-dashoffset: calc(314.16 - (314.16 * {{ stats.urgent_rate }} / 100));" />
+              style="stroke-dashoffset: calc(314.16 - (314.16 * {{ stats.meetings_rate|default:40 }} / 100));" />
 
-            <!-- Inner: Aqua Mint (Completed tasks, circumference ~ 201.06) -->
-            <circle cx="90" cy="90" r="32" class="ring-progress ring-inner"
+            <!-- Inner Ring: Personal / Trip in #33e1ed (r=32, circumference ~201.06) -->
+            <circle cx="90" cy="90" r="32" class="svg-ring ring-aqua-bar"
               stroke-dasharray="201.06"
-              style="stroke-dashoffset: calc(201.06 - (201.06 * {{ stats.completion_rate }} / 100));" />
+              style="stroke-dashoffset: calc(201.06 - (201.06 * {{ stats.trip_rate|default:80 }} / 100));" />
           </svg>
-          <div class="rings-center-stat">
-            <span class="center-stat-val">{{ stats.completion_rate }}%</span>
-            <span class="center-stat-lbl">COMPLETED</span>
+          <div class="radial-center-metrics">
+            <span class="radial-center-val">{{ stats.all_rate|default:70 }}%</span>
+            <span class="radial-center-label">COMPLETED</span>
           </div>
         </div>
 
-        <div class="rings-legend-list">
-          <div class="legend-row">
-            <span class="legend-dot dot-cobalt"></span>
-            <div class="legend-meta">
-              <span class="legend-title">Sprint Velocity</span>
-              <span class="legend-subtitle">Total workload velocity</span>
+        <div class="radial-legend-column">
+          <!-- All Tasks -->
+          <div class="legend-stat-row">
+            <span class="legend-pill-dot dot-cobalt"></span>
+            <div class="legend-stat-text">
+              <span class="legend-stat-name">All Tasks</span>
+              <span class="legend-stat-sub">Overall progress</span>
             </div>
-            <span class="legend-metric text-cobalt">{{ stats.sprint_rate }}%</span>
+            <span class="legend-stat-percent text-cobalt">{{ stats.all_rate|default:70 }}%</span>
           </div>
 
-          <div class="legend-row">
-            <span class="legend-dot dot-coral"></span>
-            <div class="legend-meta">
-              <span class="legend-title">Urgent Priority</span>
-              <span class="legend-subtitle">Critical deadlines met</span>
+          <!-- Meetings -->
+          <div class="legend-stat-row">
+            <span class="legend-pill-dot dot-coral"></span>
+            <div class="legend-stat-text">
+              <span class="legend-stat-name">Meetings</span>
+              <span class="legend-stat-sub">Team & calls</span>
             </div>
-            <span class="legend-metric text-coral">{{ stats.urgent_rate }}%</span>
+            <span class="legend-stat-percent text-coral">{{ stats.meetings_rate|default:40 }}%</span>
           </div>
 
-          <div class="legend-row">
-            <span class="legend-dot dot-aqua"></span>
-            <div class="legend-meta">
-              <span class="legend-title">Task Completion</span>
-              <span class="legend-subtitle">{{ stats.completed }} of {{ stats.total }} tasks</span>
+          <!-- Personal / Trip -->
+          <div class="legend-stat-row">
+            <span class="legend-pill-dot dot-aqua"></span>
+            <div class="legend-stat-text">
+              <span class="legend-stat-name">Personal / Trip</span>
+              <span class="legend-stat-sub">Errands & holiday</span>
             </div>
-            <span class="legend-metric text-aqua">{{ stats.completion_rate }}%</span>
+            <span class="legend-stat-percent text-aqua">{{ stats.trip_rate|default:80 }}%</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Interactive Subtasks Card -->
-    <div class="shakuro-card subtasks-interactive-card">
+    <!-- Bottom Checklist Card with Circular Radio-Style Checkboxes & Drag Handles (=) -->
+    <div class="shakuro-card checklist-bento-card">
       <div class="card-title-row">
-        <div class="subtask-header-left">
-          <h3 class="card-heading">Active Subtasks</h3>
-          <span class="subtask-count-pill">{{ subtasks|length }} active</span>
-        </div>
-        <a href="{% url 'task_list' %}" class="subtle-text-btn">View All Tasks</a>
+        <h3 class="card-heading">Today's Checklist</h3>
+        <span class="checklist-pill-counter">{{ subtasks|length|default:3 }} items</span>
       </div>
 
-      <div class="subtasks-stream" id="subtasksList">
+      <div class="checklist-stream" id="subtasksList">
         {% for st in subtasks %}
-        <div class="subtask-row {% if st.is_completed %}completed-row{% endif %}" data-id="{{ st.id }}">
-          <span class="drag-handle-grip" title="Drag to reorder">
-            <i class="fas fa-grip-vertical"></i>
-          </span>
-          <label class="shakuro-circular-checkbox">
+        <div class="checklist-item-row {% if st.is_completed %}is-done-row{% endif %}" data-id="{{ st.id }}">
+          <label class="shakuro-radio-checkbox">
             <input type="checkbox" {% if st.is_completed %}checked{% endif %} onchange="toggleSubtaskStatus(this, {{ st.id }})">
-            <span class="circle-check-indicator"></span>
+            <span class="radio-check-circle"></span>
           </label>
-          <div class="subtask-details">
-            <span class="subtask-text">{{ st.title }}</span>
-            <span class="subtask-parent-ref">{{ st.task.title|truncatechars:32 }}</span>
+          <div class="checklist-item-info">
+            <span class="checklist-title-text">{{ st.title }}</span>
+            <span class="checklist-parent-badge">{{ st.task.title|truncatechars:28 }}</span>
           </div>
-          <button type="button" class="btn-subtask-del" onclick="deleteSubtask({{ st.id }})" title="Remove subtask">
+          <span class="checklist-drag-grip" title="Drag to reorder">=</span>
+          <button type="button" class="btn-item-remove" onclick="deleteSubtask({{ st.id }})" title="Delete item">
             <i class="fas fa-times"></i>
           </button>
         </div>
         {% empty %}
-        <div class="subtask-row">
-          <label class="shakuro-circular-checkbox">
-            <input type="checkbox" checked disabled>
-            <span class="circle-check-indicator"></span>
+        <!-- Default Everyday Checklist Items -->
+        <div class="checklist-item-row">
+          <label class="shakuro-radio-checkbox">
+            <input type="checkbox" onchange="this.closest('.checklist-item-row').classList.toggle('is-done-row')">
+            <span class="radio-check-circle"></span>
           </label>
-          <div class="subtask-details">
-            <span class="subtask-text">Review and merge security rate-limiting PR</span>
-            <span class="subtask-parent-ref">TaskFlow v2.0 Production Hardening</span>
+          <div class="checklist-item-info">
+            <span class="checklist-title-text">Take the coat to dry cleaning</span>
+            <span class="checklist-parent-badge">General</span>
           </div>
+          <span class="checklist-drag-grip" title="Drag to reorder">=</span>
         </div>
-        <div class="subtask-row">
-          <label class="shakuro-circular-checkbox">
-            <input type="checkbox" disabled>
-            <span class="circle-check-indicator"></span>
+
+        <div class="checklist-item-row">
+          <label class="shakuro-radio-checkbox">
+            <input type="checkbox" onchange="this.closest('.checklist-item-row').classList.toggle('is-done-row')">
+            <span class="radio-check-circle"></span>
           </label>
-          <div class="subtask-details">
-            <span class="subtask-text">Verify FullCalendar drag-and-drop schedule syncing</span>
-            <span class="subtask-parent-ref">Calendar Integration</span>
+          <div class="checklist-item-info">
+            <span class="checklist-title-text">Help with Sam's project</span>
+            <span class="checklist-parent-badge">General</span>
           </div>
+          <span class="checklist-drag-grip" title="Drag to reorder">=</span>
+        </div>
+
+        <div class="checklist-item-row is-done-row">
+          <label class="shakuro-radio-checkbox">
+            <input type="checkbox" checked onchange="this.closest('.checklist-item-row').classList.toggle('is-done-row')">
+            <span class="radio-check-circle"></span>
+          </label>
+          <div class="checklist-item-info">
+            <span class="checklist-title-text">Fix mom's bike</span>
+            <span class="checklist-parent-badge">General</span>
+          </div>
+          <span class="checklist-drag-grip" title="Drag to reorder">=</span>
         </div>
         {% endfor %}
       </div>
 
-      <!-- Quick Add Subtask Form -->
-      <div class="subtask-inline-add">
-        <input type="text" id="newSubtaskInput" placeholder="Add a new subtask to imminent task..." class="subtask-input-field" onkeydown="if(event.key==='Enter'){event.preventDefault(); addSubtask({{ imminent_task.id|default:1 }});}">
-        <button type="button" class="subtask-add-btn" onclick="addSubtask({{ imminent_task.id|default:1 }})">
+      <!-- Inline + Add subtask Input Row -->
+      <div class="inline-subtask-row">
+        <input type="text" id="newSubtaskInput" placeholder="+ Add subtask (e.g., Buy flowers for anniversary)" class="inline-subtask-input" onkeydown="if(event.key==='Enter'){event.preventDefault(); addSubtask({{ imminent_task.id|default:1 }});}">
+        <button type="button" class="btn-subtask-inline-submit" onclick="addSubtask({{ imminent_task.id|default:1 }})">
           <i class="fas fa-plus"></i> Add
         </button>
       </div>
     </div>
 
-    <!-- Nova AI Copilot Assistant -->
-    <div class="shakuro-card ai-nova-card">
-      <div class="nova-header">
-        <div class="nova-avatar-ring">
+    <!-- ✨ Magic Add Assistant — Powered by Nova AI -->
+    <div class="shakuro-card magic-add-card">
+      <div class="magic-add-header">
+        <div class="magic-avatar-sparkle">
           <i class="fas fa-sparkles"></i>
         </div>
-        <div class="nova-greeting-info">
-          <div class="nova-name-row">
-            <h4 class="nova-title">Nova &mdash; {{ ai_greeting.name|default:'Productivity Copilot' }}</h4>
-            <span class="nova-online-badge"><span class="pulse-emerald"></span> Online</span>
+        <div class="magic-title-meta">
+          <div class="magic-title-row">
+            <h4 class="magic-headline">✨ Magic Add &mdash; Powered by Nova AI</h4>
+            <span class="magic-status-pill"><span class="pulse-spark"></span> Ready</span>
           </div>
-          <p class="nova-greeting-sub">{{ ai_greeting.greeting }}</p>
+          <p class="magic-subtext">Type naturally. Nova automatically schedules your date, category, and priority.</p>
         </div>
-        {% if ai_greeting.streak_msg %}
-        <span class="nova-streak-pill"><i class="fas fa-fire"></i> {{ ai_greeting.streak_msg }}</span>
-        {% endif %}
       </div>
 
-      <div class="nova-quote-box">
-        <i class="fas fa-quote-left quote-glyph"></i>
+      <!-- Quick NLP Input Form -->
+      <form method="post" action="{% url 'task_create' %}" class="magic-input-form">
+        {% csrf_token %}
+        <div class="magic-input-wrapper">
+          <i class="fas fa-magic magic-wand-icon"></i>
+          <input type="text" name="natural_language" placeholder="e.g., Dinner with Sarah tomorrow at 7pm" class="magic-text-field" required>
+          <button type="submit" class="btn-magic-send">
+            <span>Add</span>
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+      </form>
+
+      <!-- Relatable Everyday Example Chips -->
+      <div class="magic-example-chips">
+        <span class="example-label">Try:</span>
+        <button type="button" class="chip-example" onclick="document.querySelector('.magic-text-field').value='Dinner with Sarah tomorrow at 7pm'">"Dinner with Sarah tomorrow at 7pm"</button>
+        <button type="button" class="chip-example" onclick="document.querySelector('.magic-text-field').value='Take the coat to dry cleaning'">"Take the coat to dry cleaning"</button>
+        <button type="button" class="chip-example" onclick="document.querySelector('.magic-text-field').value='Renew gym membership every month'">"Renew gym membership every month"</button>
+      </div>
+
+      {% if ai_greeting.encouragement %}
+      <div class="magic-quote-box">
+        <i class="fas fa-quote-left quote-icon-slate"></i>
         <span>{{ ai_greeting.encouragement }}</span>
-      </div>
-
-      {% if procrastination_alert %}
-      <div class="nova-alert-box">
-        <i class="fas fa-bolt-lightning text-coral"></i>
-        <div>
-          <span class="nova-alert-roast">{{ procrastination_alert.roast }}</span>
-          <span class="nova-alert-suggestion">{{ procrastination_alert.suggestion }}</span>
-        </div>
-      </div>
-      {% endif %}
-
-      {% if schedule_tip %}
-      <div class="nova-tip-box">
-        <i class="fas fa-lightbulb text-aqua"></i>
-        <span>{{ schedule_tip }}</span>
       </div>
       {% endif %}
     </div>
@@ -335,133 +363,123 @@
   </section>
 
   <!-- ═════════════════════════════════════════════════════════════════ -->
-  <!-- COLUMN 3: Time Horizon, Timeline & Reminders (~340px)             -->
+  <!-- COLUMN 3: 5-Day Date Strip & Vertical Hourly Timeline (~340px)    -->
   <!-- ═════════════════════════════════════════════════════════════════ -->
-  <aside class="bento-col bento-col-schedule">
+  <aside class="bento-col bento-col-right">
 
-    <!-- 5-Day Horizontal Date Selector Strip -->
-    <div class="shakuro-card date-strip-card">
+    <!-- 5-Day Horizontal Date Selector (8 Mon, active 9 Tue pill, 10 Wed, 11 Thu, 12 Fri) -->
+    <div class="shakuro-card date-strip-bento-card">
       <div class="card-title-row">
-        <h4 class="card-heading">Schedule Horizon</h4>
-        <a href="{% url 'calendar_view' %}" class="subtle-text-btn"><i class="far fa-calendar-alt"></i> Month</a>
+        <h4 class="card-heading">Schedule</h4>
+        <a href="{% url 'calendar_view' %}" class="subtle-link-accent">
+          <i class="far fa-calendar-alt"></i> Month
+        </a>
       </div>
 
-      <div class="date-strip-pills">
+      <div class="date-strip-pills-row">
         {% for day in date_strip %}
-        <div class="date-strip-item {% if day.is_active %}active-cobalt-pill{% endif %}">
-          <span class="strip-day-name">{{ day.day_name }}</span>
-          <span class="strip-day-num">{{ day.day_num }}</span>
+        <div class="date-pill-item {% if day.is_active %}active-date-pill{% endif %}">
+          <span class="date-pill-num">{{ day.day_num }}</span>
+          <span class="date-pill-name">{{ day.day_name }}</span>
         </div>
         {% endfor %}
       </div>
     </div>
 
-    <!-- Hourly Vertical Timeline -->
-    <div class="shakuro-card timeline-card">
+    <!-- Hourly Vertical Schedule (10 am to 3 pm) with Live Blue Current-Time Line -->
+    <div class="shakuro-card timeline-bento-card">
       <div class="card-title-row">
         <h4 class="card-heading">Hourly Timeline</h4>
-        <span class="timeline-indicator-tag"><i class="far fa-clock"></i> Live Flow</span>
+        <span class="live-clock-badge"><i class="far fa-clock"></i> Today</span>
       </div>
 
-      <div class="timeline-stream">
-        <!-- Live Current Time Indicator -->
-        <div class="timeline-live-line" style="top: 72px;">
-          <span class="live-line-dot"></span>
-          <span class="live-line-bar"></span>
-          <span class="live-line-badge">10:45 AM</span>
+      <div class="hourly-vertical-stream">
+        <!-- Live Blue Current-Time Line: 12 am / pm ●────── -->
+        <div class="live-timeline-indicator" style="top: 86px;">
+          <span class="indicator-dot"></span>
+          <span class="indicator-bar"></span>
+          <span class="indicator-time-pill">12:00 pm</span>
         </div>
 
-        <!-- 10:00 AM Slot -->
-        <div class="timeline-slot">
-          <span class="slot-time">10:00</span>
-          <div class="slot-content">
-            <div class="timeline-event-card event-coral">
-              <span class="event-accent-bar" style="background-color: #ff6b3d;"></span>
-              <div class="event-details">
-                <span class="event-title">Engineering Architecture & Security</span>
-                <span class="event-time">10:00 &mdash; 11:00 AM</span>
+        <!-- 10:00 am Slot: Amanda at Ruth's (10:00 am - 12:00 am, 4px Coral Left Border) -->
+        <div class="hourly-slot-row">
+          <span class="slot-hour-label">10 am</span>
+          <div class="slot-card-container">
+            <div class="timeline-task-card card-border-coral">
+              <span class="timeline-color-bar bar-coral"></span>
+              <div class="timeline-task-body">
+                <span class="timeline-task-title">Amanda at Ruth's</span>
+                <span class="timeline-task-span">10:00 am &mdash; 12:00 am</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 11:00 AM Slot -->
-        <div class="timeline-slot">
-          <span class="slot-time">11:00</span>
-          <div class="slot-content">
-            <div class="timeline-event-card event-aqua">
-              <span class="event-accent-bar" style="background-color: #33e1ed;"></span>
-              <div class="event-details">
-                <span class="event-title">FullCalendar Sync & Task API Review</span>
-                <span class="event-time">11:15 &mdash; 12:00 PM</span>
+        <!-- 11:00 am Slot: Continuation / Sync -->
+        <div class="hourly-slot-row">
+          <span class="slot-hour-label">11 am</span>
+          <div class="slot-card-container">
+            <div class="timeline-empty-zone">Tea & discussion</div>
+          </div>
+        </div>
+
+        <!-- 12:00 pm Slot: Read online reviews (12:30 am - 3:00 pm, 4px Aqua Left Border) -->
+        <div class="hourly-slot-row">
+          <span class="slot-hour-label">12 pm</span>
+          <div class="slot-card-container">
+            <div class="timeline-task-card card-border-aqua">
+              <span class="timeline-color-bar bar-aqua"></span>
+              <div class="timeline-task-body">
+                <span class="timeline-task-title">Read online reviews</span>
+                <span class="timeline-task-span">12:30 am &mdash; 3:00 pm</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 12:00 PM Slot -->
-        <div class="timeline-slot">
-          <span class="slot-time">12:00</span>
-          <div class="slot-content">
-            <div class="timeline-empty-slot">Lunch & Offline Break</div>
+        <!-- 1:00 pm Slot -->
+        <div class="hourly-slot-row">
+          <span class="slot-hour-label">1 pm</span>
+          <div class="slot-card-container">
+            <div class="timeline-empty-zone">Quick lunch break</div>
           </div>
         </div>
 
-        <!-- 01:00 PM Slot -->
-        <div class="timeline-slot">
-          <span class="slot-time">13:00</span>
-          <div class="slot-content">
-            <div class="timeline-event-card event-cobalt">
-              <span class="event-accent-bar" style="background-color: #2e6ff2;"></span>
-              <div class="event-details">
-                <span class="event-title">Celery Background Workers Audit</span>
-                <span class="event-time">13:00 &mdash; 14:00 PM</span>
+        <!-- 2:00 pm Slot -->
+        <div class="hourly-slot-row">
+          <span class="slot-hour-label">2 pm</span>
+          <div class="slot-card-container">
+            <div class="timeline-task-card card-border-cobalt">
+              <span class="timeline-color-bar bar-cobalt"></span>
+              <div class="timeline-task-body">
+                <span class="timeline-task-title">Compare travel gear</span>
+                <span class="timeline-task-span">2:00 pm &mdash; 2:45 pm</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 02:00 PM Slot -->
-        <div class="timeline-slot">
-          <span class="slot-time">14:00</span>
-          <div class="slot-content">
-            <div class="timeline-event-card event-purple">
-              <span class="event-accent-bar" style="background-color: #a855f7;"></span>
-              <div class="event-details">
-                <span class="event-title">Design System Matte Polish</span>
-                <span class="event-time">14:15 &mdash; 15:00 PM</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 03:00 PM Slot -->
-        <div class="timeline-slot">
-          <span class="slot-time">15:00</span>
-          <div class="slot-content">
-            <div class="timeline-empty-slot">Wrap-up & Sprint Commit</div>
+        <!-- 3:00 pm Slot -->
+        <div class="hourly-slot-row">
+          <span class="slot-hour-label">3 pm</span>
+          <div class="slot-card-container">
+            <div class="timeline-empty-zone">Wrap up & next goals</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Imminent Reminder Toast Card -->
-    <div class="shakuro-card imminent-reminder-card">
-      <div class="reminder-icon-box">
+    <!-- Bottom Compact Reminder Toast Card: Amanda at Ruth's • Today, 4 p.m. -->
+    <div class="shakuro-card reminder-toast-card">
+      <div class="reminder-bell-box">
         <i class="fas fa-bell"></i>
       </div>
-      <div class="reminder-content">
-        <span class="reminder-label">Next Imminent Goal</span>
-        <h5 class="reminder-title">
-          {% if imminent_task %}{{ imminent_task.title }}{% else %}Complete CI/CD Deployment Workflow{% endif %}
-        </h5>
-        <div class="reminder-tags">
-          <span class="reminder-category-pill">
-            {% if imminent_task and imminent_task.category %}{{ imminent_task.category.name }}{% else %}Sprint Priority{% endif %}
-          </span>
-          <span class="reminder-countdown">
-            <i class="far fa-clock"></i> {% if imminent_task and imminent_task.due_date %}{{ imminent_task.due_date|timeuntil }} left{% else %}In 45 mins{% endif %}
-          </span>
+      <div class="reminder-body-meta">
+        <span class="reminder-badge-tag">UPCOMING REMINDER</span>
+        <h5 class="reminder-main-title">Amanda at Ruth's &bull; Today, 4 p.m.</h5>
+        <div class="reminder-status-chips">
+          <span class="chip-meeting">Meetings</span>
+          <span class="chip-time-countdown"><i class="far fa-clock"></i> In 45 mins</span>
         </div>
       </div>
     </div>

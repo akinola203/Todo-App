@@ -4,53 +4,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - TaskFlow</title>
+    <title>Create Account - TaskFlow</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-<body class="auth-page">
-    <div class="auth-container">
-        <div class="auth-card glass-card">
-            <div class="auth-header">
-                <div class="logo">
-                    <i class="fas fa-layer-group"></i>
-                    <span>TaskFlow</span>
-                </div>
-                <h2>Create Account</h2>
-                <p>Start organizing your life</p>
+<body class="shakuro-auth-body">
+    <div class="shakuro-auth-container">
+        <div class="shakuro-auth-card">
+            <div class="auth-header-shakuro">
+                <a href="{% url 'dashboard' %}" class="logo">
+                    <span class="logo-icon"><i class="fas fa-layer-group"></i></span>
+                    <span class="logo-text">TaskFlow</span>
+                </a>
+                <h2 class="auth-main-title">Create Account</h2>
+                <p class="auth-sub-title">Get organized with beautiful dark matte productivity</p>
             </div>
 
-            <form method="post" class="auth-form">
+            <!-- Instant Demo Quick Access -->
+            <div class="demo-quick-access">
+                <a href="{% url 'instant_demo' %}" class="btn-demo-instant">
+                    <i class="fas fa-sparkles"></i>
+                    <span>Try Instant Demo (No Sign-Up)</span>
+                </a>
+            </div>
+
+            <div class="auth-divider">
+                <span>or create your free personal account</span>
+            </div>
+
+            <form method="post" class="auth-form-shakuro">
                 {% csrf_token %}
 
                 {% for field in form %}
-                <div class="form-group">
+                <div class="form-group-shakuro">
                     <label>{{ field.label }}</label>
-                    <div class="input-with-icon">
+                    <div class="input-shakuro-wrapper">
                         {% if 'password' in field.name %}
-                        <i class="fas fa-lock"></i>
+                        <i class="fas fa-lock input-icon-shakuro"></i>
                         {% elif 'email' in field.name %}
-                        <i class="fas fa-envelope"></i>
+                        <i class="fas fa-envelope input-icon-shakuro"></i>
                         {% else %}
-                        <i class="fas fa-user"></i>
+                        <i class="fas fa-user input-icon-shakuro"></i>
                         {% endif %}
                         {{ field }}
                     </div>
                     {% if field.errors %}
-                    <span class="field-error">{{ field.errors.0 }}</span>
+                    <span class="field-error-shakuro">{{ field.errors.0 }}</span>
                     {% endif %}
                 </div>
                 {% endfor %}
 
-                <button type="submit" class="btn btn-primary btn-block btn-lg">
-                    <i class="fas fa-user-plus"></i> Create Account
+                <button type="submit" class="btn-shakuro-submit">
+                    <span>Create Account & Seed Starter Tasks</span>
+                    <i class="fas fa-arrow-right"></i>
                 </button>
             </form>
 
-            <div class="auth-footer">
+            <div class="auth-footer-shakuro">
                 <p>Already have an account? <a href="{% url 'login' %}">Sign In</a></p>
             </div>
         </div>

@@ -35,4 +35,5 @@ urlpatterns = [
     # Analytics & Auth
     path('analytics/', views.analytics, name='analytics'),
     path('signup/', views.signup, name='signup'),
+    path('demo/', views.instant_demo, name='instant_demo'),
 ]

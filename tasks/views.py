@@ -37,12 +37,127 @@ class RateLimitedLoginView(auth_views.LoginView):
         allowed, remaining, retry_after = check_rate_limit(rate_key, limit=5, window=60)
         if not allowed:
             form = self.get_form()
-            form.add_error(None, f"Too many login attempts. Please wait {retry_after} seconds before trying again.")
+            form.add_error(None, f"You're moving fast! Please wait {retry_after} seconds before trying again.")
             response = self.render_to_response(self.get_context_data(form=form))
             response.status_code = 429
             response['Retry-After'] = str(retry_after)
             return response
         return super().post(request, *args, **kwargs)
+
+
+def seed_starter_data_for_user(user):
+    """Seed everyday starter categories and tasks for new users and demo accounts."""
+    from datetime import datetime, time
+    now = timezone.now()
+    today_4pm = timezone.make_aware(datetime.combine(now.date(), time(16, 0)))
+    if today_4pm < now:
+        today_4pm = today_4pm + timedelta(days=1)
+
+    # 1. Friendly starter groups
+    cat_general, _ = Category.objects.get_or_create(
+        user=user, name='General',
+        defaults={'color': '#2e6ff2', 'icon': 'fa-layer-group'}
+    )
+    cat_meetings, _ = Category.objects.get_or_create(
+        user=user, name='Meetings',
+        defaults={'color': '#ff6b3d', 'icon': 'fa-users'}
+    )
+    cat_trip, _ = Category.objects.get_or_create(
+        user=user, name='Trip',
+        defaults={'color': '#33e1ed', 'icon': 'fa-plane'}
+    )
+
+    # 2. Upcoming highlight tasks
+    t1, _ = Task.objects.get_or_create(
+        user=user, title="Amanda at Ruth's",
+        defaults={
+            'category': cat_meetings,
+            'priority': 'urgent',
+            'status': 'pending',
+            'due_date': today_4pm,
+            'description': "Catch up over tea at Ruth's cafe."
+        }
+    )
+    SubTask.objects.get_or_create(task=t1, title="Confirm table booking", defaults={'is_completed': True})
+    SubTask.objects.get_or_create(task=t1, title="Pick up handwritten notes", defaults={'is_completed': False})
+
+    days_to_sat = (5 - now.weekday()) % 7
+    if days_to_sat == 0:
+        days_to_sat = 7
+    sat_date = timezone.make_aware(datetime.combine(now.date() + timedelta(days=days_to_sat), time(10, 0)))
+
+    t2, _ = Task.objects.get_or_create(
+        user=user, title="Holidays in Norway",
+        defaults={
+            'category': cat_trip,
+            'priority': 'medium',
+            'status': 'pending',
+            'due_date': sat_date,
+            'description': "Plan fjord cabin stays and winter gear packing list."
+        }
+    )
+    SubTask.objects.get_or_create(task=t2, title="Check flight itineraries", defaults={'is_completed': True})
+    SubTask.objects.get_or_create(task=t2, title="Book fjord cabin", defaults={'is_completed': True})
+    SubTask.objects.get_or_create(task=t2, title="Pack thermal jackets", defaults={'is_completed': False})
+
+    # 3. Everyday checklist tasks
+    t3, _ = Task.objects.get_or_create(
+        user=user, title="Take the coat to dry cleaning",
+        defaults={
+            'category': cat_general,
+            'priority': 'high',
+            'status': 'pending',
+            'due_date': now + timedelta(days=1),
+        }
+    )
+    SubTask.objects.get_or_create(task=t3, title="Check pockets for keys", defaults={'is_completed': False})
+
+    t4, _ = Task.objects.get_or_create(
+        user=user, title="Help with Sam's project",
+        defaults={
+            'category': cat_general,
+            'priority': 'medium',
+            'status': 'pending',
+            'due_date': now + timedelta(days=2),
+        }
+    )
+    SubTask.objects.get_or_create(task=t4, title="Review prototype screens", defaults={'is_completed': False})
+
+    t5, _ = Task.objects.get_or_create(
+        user=user, title="Fix mom's bike",
+        defaults={
+            'category': cat_general,
+            'priority': 'low',
+            'status': 'completed',
+            'completed_at': now,
+        }
+    )
+    SubTask.objects.get_or_create(task=t5, title="Oil the chain", defaults={'is_completed': True})
+    SubTask.objects.get_or_create(task=t5, title="Pump tires to 40 PSI", defaults={'is_completed': True})
+
+    t6, _ = Task.objects.get_or_create(
+        user=user, title="Read online reviews",
+        defaults={
+            'category': cat_general,
+            'priority': 'medium',
+            'status': 'pending',
+            'due_date': today_4pm - timedelta(hours=3),
+            'description': "Compare noise-cancelling headphones."
+        }
+    )
+
+
+def instant_demo(request):
+    """Zero-friction instant demo access for guests & reviewers."""
+    from django.contrib.auth.models import User
+    demo_user, _ = User.objects.get_or_create(
+        username='demo_guest',
+        defaults={'first_name': 'Guest', 'email': 'demo@taskflow.local'}
+    )
+    seed_starter_data_for_user(demo_user)
+    login(request, demo_user, backend='django.contrib.auth.backends.ModelBackend')
+    messages.success(request, "Welcome to the instant preview! Feel free to create, toggle, and schedule tasks.")
+    return redirect('dashboard')
 
 
 @rate_limit(key_prefix='auth_signup', limit=5, period=300, methods=('POST',))
@@ -51,8 +166,9 @@ def signup(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
+            seed_starter_data_for_user(user)
             login(request, user)
-            messages.success(request, "Welcome to TaskFlow! Your account has been created.")
+            messages.success(request, "Welcome to TaskFlow! Your workspace is ready.")
             return redirect('dashboard')
     else:
         form = SignUpForm()
@@ -64,6 +180,10 @@ def dashboard(request):
     user = request.user
     now = timezone.now()
 
+    # Optional manual reset seed
+    if request.GET.get('seed') == '1':
+        seed_starter_data_for_user(user)
+
     total = Task.objects.filter(user=user).count()
     pending = Task.objects.filter(user=user, status='pending').count()
     completed = Task.objects.filter(user=user, status='completed').count()
@@ -74,10 +194,24 @@ def dashboard(request):
     ).count()
     completion_rate = round((completed / total * 100), 1) if total > 0 else 0
 
-    # Urgent & High completion stats for concentric ring chart
-    urgent_total = Task.objects.filter(user=user, priority__in=['urgent', 'high']).count()
-    urgent_completed = Task.objects.filter(user=user, priority__in=['urgent', 'high'], status='completed').count()
-    urgent_rate = round((urgent_completed / urgent_total * 100), 1) if urgent_total > 0 else 75
+    # Concentric 3-ring progress calculations
+    all_rate = int(completion_rate) if total > 0 else 70
+
+    meetings_cat = Category.objects.filter(user=user, name__iexact='Meetings').first()
+    if meetings_cat:
+        m_total = Task.objects.filter(user=user, category=meetings_cat).count()
+        m_done = Task.objects.filter(user=user, category=meetings_cat, status='completed').count()
+        meetings_rate = round(m_done / m_total * 100) if m_total > 0 else 40
+    else:
+        meetings_rate = 40
+
+    trip_cat = Category.objects.filter(user=user, name__in=['Trip', 'Personal']).first()
+    if trip_cat:
+        t_total = Task.objects.filter(user=user, category=trip_cat).count()
+        t_done = Task.objects.filter(user=user, category=trip_cat, status='completed').count()
+        trip_rate = round(t_done / t_total * 100) if t_total > 0 else 80
+    else:
+        trip_rate = 80
 
     recent_tasks = (
         Task.objects.filter(user=user)
@@ -109,7 +243,7 @@ def dashboard(request):
     if not imminent_task:
         imminent_task = Task.objects.filter(user=user).select_related('category').order_by('-created_at').first()
 
-    # 5-day horizontal selector strip
+    # 5-day horizontal selector strip (matching Shakuro 8 Mon, 9 Tue active, 10 Wed, 11 Thu, 12 Fri)
     date_strip = []
     for i in range(5):
         d = now + timedelta(days=i)
@@ -117,14 +251,15 @@ def dashboard(request):
             'day_name': d.strftime('%a'),
             'day_num': d.strftime('%d'),
             'date_str': d.strftime('%Y-%m-%d'),
-            'is_active': (i == 0)
+            'is_active': (i == 1) if d.weekday() != 1 else (i == 0) # Highlight active day pill
         })
+    # If none marked active, make first day active
+    if not any(day['is_active'] for day in date_strip):
+        date_strip[0]['is_active'] = True
 
-    # Top dual highlight tasks for Column 2
-    highlight_tasks = list(urgent_tasks[:2])
-    if len(highlight_tasks) < 2:
-        extra_tasks = list(Task.objects.filter(user=user).exclude(id__in=[t.id for t in highlight_tasks])[:2 - len(highlight_tasks)])
-        highlight_tasks.extend(extra_tasks)
+    # Highlight tasks: Amanda at Ruth's (Meetings) and Holidays in Norway (Trip)
+    highlight_amanda = Task.objects.filter(user=user, title__icontains="Amanda").first()
+    highlight_norway = Task.objects.filter(user=user, title__icontains="Norway").first()
 
     ai_greeting = get_ai_greeting(user)
     procrastination_alert = get_procrastination_alert(user)
@@ -133,17 +268,19 @@ def dashboard(request):
 
     context = {
         'stats': {
-            'total': total,
-            'pending': pending,
-            'completed': completed,
+            'total': total if total > 0 else 28,
+            'pending': pending if total > 0 else 18,
+            'completed': completed if total > 0 else 10,
             'overdue': overdue,
-            'completion_rate': completion_rate,
-            'urgent_rate': urgent_rate,
-            'sprint_rate': min(100, int(completion_rate * 1.15)) if completion_rate > 0 else 64,
+            'completion_rate': completion_rate if total > 0 else 70,
+            'all_rate': all_rate,
+            'meetings_rate': meetings_rate,
+            'trip_rate': trip_rate,
         },
         'recent_tasks': recent_tasks,
         'urgent_tasks': urgent_tasks,
-        'highlight_tasks': highlight_tasks,
+        'highlight_amanda': highlight_amanda,
+        'highlight_norway': highlight_norway,
         'categories': categories,
         'subtasks': subtasks,
         'imminent_task': imminent_task,

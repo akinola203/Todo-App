@@ -75,12 +75,12 @@ def rate_limit(key_prefix, limit=10, period=60, methods=('POST',), only_when_fie
                     )
                     if is_ajax:
                         resp = JsonResponse(
-                            {'error': 'Rate limit exceeded. Please wait a moment before trying again.'},
+                            {'error': "You're moving fast! Please wait a moment before trying again."},
                             status=429
                         )
                     else:
                         resp = HttpResponse(
-                            "Too many requests. Please slow down and try again in a minute.",
+                            "You're moving fast! Please wait a moment before trying again.",
                             status=429
                         )
                     resp['Retry-After'] = str(period)
